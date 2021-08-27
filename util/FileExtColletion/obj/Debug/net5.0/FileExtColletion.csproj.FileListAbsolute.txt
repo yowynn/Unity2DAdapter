@@ -1,0 +1,16 @@
+P:\MINE\Cocos2Unity\util\FileExtColletion\bin\Debug\net5.0\FileExtColletion.exe
+P:\MINE\Cocos2Unity\util\FileExtColletion\bin\Debug\net5.0\FileExtColletion.deps.json
+P:\MINE\Cocos2Unity\util\FileExtColletion\bin\Debug\net5.0\FileExtColletion.runtimeconfig.json
+P:\MINE\Cocos2Unity\util\FileExtColletion\bin\Debug\net5.0\FileExtColletion.runtimeconfig.dev.json
+P:\MINE\Cocos2Unity\util\FileExtColletion\bin\Debug\net5.0\FileExtColletion.dll
+P:\MINE\Cocos2Unity\util\FileExtColletion\bin\Debug\net5.0\ref\FileExtColletion.dll
+P:\MINE\Cocos2Unity\util\FileExtColletion\bin\Debug\net5.0\FileExtColletion.pdb
+P:\MINE\Cocos2Unity\util\FileExtColletion\obj\Debug\net5.0\FileExtColletion.csproj.AssemblyReference.cache
+P:\MINE\Cocos2Unity\util\FileExtColletion\obj\Debug\net5.0\FileExtColletion.GeneratedMSBuildEditorConfig.editorconfig
+P:\MINE\Cocos2Unity\util\FileExtColletion\obj\Debug\net5.0\FileExtColletion.AssemblyInfoInputs.cache
+P:\MINE\Cocos2Unity\util\FileExtColletion\obj\Debug\net5.0\FileExtColletion.AssemblyInfo.cs
+P:\MINE\Cocos2Unity\util\FileExtColletion\obj\Debug\net5.0\FileExtColletion.csproj.CoreCompileInputs.cache
+P:\MINE\Cocos2Unity\util\FileExtColletion\obj\Debug\net5.0\FileExtColletion.dll
+P:\MINE\Cocos2Unity\util\FileExtColletion\obj\Debug\net5.0\ref\FileExtColletion.dll
+P:\MINE\Cocos2Unity\util\FileExtColletion\obj\Debug\net5.0\FileExtColletion.pdb
+P:\MINE\Cocos2Unity\util\FileExtColletion\obj\Debug\net5.0\FileExtColletion.genruntimeconfig.cache
