@@ -1,0 +1,167 @@
+<GameProjectFile _count="769">
+  <PropertyGroup _count="769" Type="769" Name="769" ID="769" Version="769" />
+  <Content _count="769" ctype="769">
+    <Content _count="769">
+      <Animation _count="769" Duration="769" Speed="769" ActivedAnimationName="313">
+        <Timeline _count="50025" ActionTag="50025" Property="50025">
+          <PointFrame _count="74281" FrameIndex="74281" X="74281" Y="74281" Tween="6">
+            <EasingData _count="74275" Type="74275">
+              <Points _count="409">
+                <PointF _count="1636" Y="1122" X="889" />
+              </Points>
+            </EasingData>
+          </PointFrame>
+          <ScaleFrame _count="157377" FrameIndex="157377" X="157377" Y="157377" Tween="8">
+            <EasingData _count="157369" Type="157369">
+              <Points _count="997">
+                <PointF _count="3988" Y="2771" X="2141" />
+              </Points>
+            </EasingData>
+          </ScaleFrame>
+          <IntFrame _count="7594" FrameIndex="7594" Value="7594">
+            <EasingData _count="7594" Type="7594">
+              <Points _count="69">
+                <PointF _count="276" Y="202" X="138" />
+              </Points>
+            </EasingData>
+          </IntFrame>
+          <BoolFrame _count="30838" FrameIndex="30838" Tween="30838" Value="30838" />
+          <TextureFrame _count="335" FrameIndex="335" Tween="335">
+            <TextureFile _count="335" Type="335" Path="335" Plist="335" />
+          </TextureFrame>
+          <InnerActionFrame _count="1" FrameIndex="1" Tween="1" InnerActionType="1" CurrentAniamtionName="1" SingleFrameIndex="1" />
+          <ColorFrame _count="23" FrameIndex="23" Alpha="23">
+            <EasingData _count="23" Type="23" />
+            <Color _count="23" A="23" R="23" G="23" B="23" />
+          </ColorFrame>
+          <EventFrame _count="1" FrameIndex="1" Tween="1" Value="1" />
+        </Timeline>
+      </Animation>
+      <AnimationList _count="614">
+        <AnimationInfo _count="1318" Name="1318" StartIndex="1318" EndIndex="1318">
+          <RenderColor _count="1318" A="1318" R="1318" G="1318" B="1318" />
+        </AnimationInfo>
+      </AnimationList>
+      <ObjectData _count="769" Name="769" Tag="195" ctype="769">
+        <Size _count="767" X="767" Y="767" />
+        <Children _count="765">
+          <AbstractNodeData _count="796" Name="796" CanEdit="162" ActionTag="795" Tag="795" IconVisible="795" BackColorAlpha="774" ColorAngle="774" ctype="796" Scale9Width="32" Scale9Height="32" CameraFlagMode="1" Fov="1" UserCameraFlagMode="1" ComboBoxIndex="25" LeftMargin="72" RightMargin="144" TopMargin="148" BottomMargin="51" Alpha="3" Visible="9" TouchEnable="60">
+            <Size _count="795" X="795" Y="795" />
+            <Children _count="761">
+              <AbstractNodeData _count="3009" Name="3009" CanEdit="684" ActionTag="3009" Tag="3009" IconVisible="3009" LeftMargin="2474" RightMargin="2648" TopMargin="2643" BottomMargin="2012" ctype="3009" BackColorAlpha="1380" ColorAngle="1380" Scale9Width="933" Scale9Height="933" Rotation="160" RotationSkewX="160" TouchEnable="767" ComboBoxIndex="429" InnerActionSpeed="392" RotationSkewY="56" VisibleForFrame="51" Alpha="44" FlipX="1" Visible="8" CallBackType="6" ClipAble="1">
+                <Size _count="3009" X="3009" Y="3009" />
+                <Children _count="1003">
+                  <AbstractNodeData _count="5481" Name="5481" CanEdit="1657" ActionTag="5481" Tag="5481" IconVisible="5481" LeftMargin="5268" RightMargin="5443" TopMargin="5443" BottomMargin="5258" ctype="5481" VisibleForFrame="455" Rotation="1034" RotationSkewX="1034" RotationSkewY="994" TouchEnable="227" BackColorAlpha="843" ColorAngle="843" Scale9Width="514" Scale9Height="514" Alpha="69" Visible="21" ComboBoxIndex="13" CallBackType="9">
+                    <Size _count="5481" X="5481" Y="5481" />
+                    <AnchorPoint _count="5481" ScaleX="5106" ScaleY="4374" />
+                    <Position _count="5481" X="5268" Y="5262" />
+                    <Scale _count="5481" ScaleX="5481" ScaleY="5481" />
+                    <CColor _count="5481" A="5481" R="5481" G="5481" B="5481" />
+                    <PrePosition _count="5481" X="4980" Y="4975" />
+                    <PreSize _count="5481" X="5481" Y="5481" />
+                    <FileData _count="4638" Type="4638" Path="4638" Plist="4638" />
+                    <BlendFunc _count="4638" Src="4638" Dst="4638" />
+                    <Children _count="843">
+                      <AbstractNodeData _count="3483" Name="3483" CanEdit="1738" ActionTag="3483" Tag="3483" IconVisible="3483" LeftMargin="3483" RightMargin="3483" TopMargin="3482" BottomMargin="3482" ctype="3483" Rotation="778" RotationSkewX="778" RotationSkewY="818" VisibleForFrame="283" BackColorAlpha="874" ColorAngle="874" Scale9Width="667" Scale9Height="667" TouchEnable="125" Alpha="17" Visible="1" CallBackType="3">
+                        <Size _count="3483" X="3483" Y="3483" />
+                        <AnchorPoint _count="3483" ScaleX="3312" ScaleY="2952" />
+                        <Position _count="3483" X="3483" Y="3482" />
+                        <Scale _count="3483" ScaleX="3483" ScaleY="3483" />
+                        <CColor _count="3483" A="3483" R="3483" G="3483" B="3483" />
+                        <PrePosition _count="3483" X="3286" Y="3285" />
+                        <PreSize _count="3483" X="3483" Y="3483" />
+                        <FileData _count="2609" Type="2609" Path="2609" Plist="2609" />
+                        <BlendFunc _count="2609" Src="2609" Dst="2609" />
+                        <Children _count="874">
+                          <AbstractNodeData _count="3044" Name="3044" CanEdit="1912" ActionTag="3044" Tag="3044" IconVisible="3044" LeftMargin="3044" RightMargin="3044" TopMargin="3044" BottomMargin="3044" ctype="3044" VisibleForFrame="508" Rotation="330" RotationSkewX="330" RotationSkewY="333" TouchEnable="26" BackColorAlpha="46" ColorAngle="46" Scale9Width="41" Scale9Height="41" Alpha="10" Visible="11">
+                            <Size _count="3044" X="3044" Y="3044" />
+                            <AnchorPoint _count="3044" ScaleX="2963" ScaleY="2880" />
+                            <Position _count="3044" X="3044" Y="3044" />
+                            <Scale _count="3044" ScaleX="3044" ScaleY="3044" />
+                            <CColor _count="3044" A="3044" R="3044" G="3044" B="3044" />
+                            <PrePosition _count="3044" X="3044" Y="3044" />
+                            <PreSize _count="3044" X="3044" Y="3044" />
+                            <FileData _count="2998" Type="2998" Path="2998" Plist="2998" />
+                            <BlendFunc _count="2998" Src="2998" Dst="2998" />
+                            <Children _count="46">
+                              <AbstractNodeData _count="149" Name="149" CanEdit="51" ActionTag="149" Tag="149" Rotation="52" RotationSkewX="52" RotationSkewY="53" IconVisible="149" LeftMargin="145" RightMargin="149" TopMargin="149" BottomMargin="149" ctype="149" Alpha="33" TouchEnable="6" BackColorAlpha="9" ColorAngle="9" Scale9Width="8" Scale9Height="8" VisibleForFrame="11">
+                                <Size _count="149" X="149" Y="149" />
+                                <AnchorPoint _count="149" ScaleX="131" ScaleY="139" />
+                                <Position _count="149" X="145" Y="137" />
+                                <Scale _count="149" ScaleX="149" ScaleY="149" />
+                                <CColor _count="149" A="149" R="149" G="149" B="149" />
+                                <PrePosition _count="149" X="145" Y="137" />
+                                <PreSize _count="149" X="149" Y="149" />
+                                <FileData _count="140" Type="140" Path="140" Plist="140" />
+                                <BlendFunc _count="140" Src="140" Dst="140" />
+                                <Children _count="9">
+                                  <AbstractNodeData _count="20" Name="20" ActionTag="20" Tag="20" IconVisible="20" LeftMargin="20" RightMargin="20" TopMargin="20" BottomMargin="20" ctype="20" VisibleForFrame="1" Rotation="3" RotationSkewX="3" RotationSkewY="3" CanEdit="8">
+                                    <Size _count="20" X="20" Y="20" />
+                                    <AnchorPoint _count="20" ScaleX="20" ScaleY="20" />
+                                    <Position _count="20" X="20" Y="20" />
+                                    <Scale _count="20" ScaleX="20" ScaleY="20" />
+                                    <CColor _count="20" A="20" R="20" G="20" B="20" />
+                                    <PrePosition _count="20" X="20" Y="20" />
+                                    <PreSize _count="20" X="20" Y="20" />
+                                    <FileData _count="20" Type="20" Path="20" Plist="20" />
+                                    <BlendFunc _count="20" Src="20" Dst="20" />
+                                  </AbstractNodeData>
+                                </Children>
+                                <SingleColor _count="9" A="9" R="9" G="9" B="9" />
+                                <FirstColor _count="9" A="9" R="9" G="9" B="9" />
+                                <EndColor _count="9" A="9" R="9" G="9" B="9" />
+                                <ColorVector _count="9" ScaleY="9" />
+                              </AbstractNodeData>
+                            </Children>
+                            <SingleColor _count="46" A="46" R="46" G="46" B="46" />
+                            <FirstColor _count="46" A="46" R="46" G="46" B="46" />
+                            <EndColor _count="46" A="46" R="46" G="46" B="46" />
+                            <ColorVector _count="46" ScaleY="46" />
+                          </AbstractNodeData>
+                        </Children>
+                        <SingleColor _count="874" A="874" R="874" G="874" B="874" />
+                        <FirstColor _count="874" A="874" R="874" G="874" B="874" />
+                        <EndColor _count="874" A="874" R="874" G="874" B="874" />
+                        <ColorVector _count="874" ScaleY="874" />
+                      </AbstractNodeData>
+                    </Children>
+                    <SingleColor _count="843" A="843" R="843" G="843" B="843" />
+                    <FirstColor _count="843" A="843" R="843" G="843" B="843" />
+                    <EndColor _count="843" A="843" R="843" G="843" B="843" />
+                    <ColorVector _count="843" ScaleY="843" />
+                  </AbstractNodeData>
+                </Children>
+                <AnchorPoint _count="3009" ScaleX="1647" ScaleY="1178" />
+                <Position _count="3009" X="2488" Y="2035" />
+                <Scale _count="3009" ScaleX="3009" ScaleY="3009" />
+                <CColor _count="3009" A="3009" R="3009" G="3009" B="3009" />
+                <PrePosition _count="3009" X="408" Y="408" />
+                <PreSize _count="3009" X="3009" Y="3009" />
+                <FileData _count="1629" Type="1629" Path="1629" Plist="1629" />
+                <BlendFunc _count="1237" Src="1237" Dst="1237" />
+                <SingleColor _count="1380" A="1380" R="1380" G="1380" B="1380" />
+                <FirstColor _count="1380" A="1380" R="1380" G="1380" B="1380" />
+                <EndColor _count="1380" A="1380" R="1380" G="1380" B="1380" />
+                <ColorVector _count="1380" ScaleY="1380" />
+              </AbstractNodeData>
+            </Children>
+            <AnchorPoint _count="795" ScaleX="7" ScaleY="6" />
+            <Position _count="795" X="72" Y="51" />
+            <Scale _count="795" ScaleX="795" ScaleY="795" />
+            <CColor _count="796" A="796" R="796" G="796" B="796" />
+            <PrePosition _count="795" X="26" Y="15" />
+            <PreSize _count="795" X="795" Y="795" />
+            <SingleColor _count="774" A="774" R="774" G="774" B="774" />
+            <FirstColor _count="774" A="774" R="774" G="774" B="774" />
+            <EndColor _count="774" A="774" R="774" G="774" B="774" />
+            <ColorVector _count="774" ScaleY="774" />
+            <Position3D _count="1" Y="1" Z="1" />
+            <FileData _count="21" Type="21" Path="21" Plist="21" />
+            <BlendFunc _count="21" Src="21" Dst="21" />
+          </AbstractNodeData>
+        </Children>
+      </ObjectData>
+      <SceneCamera _count="1" />
+    </Content>
+  </Content>
+</GameProjectFile>
