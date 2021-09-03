@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 namespace Wynnsharp
 {
-    class FileSystemUtil
+    public class FileSystemUtil
     {
         public delegate void OnFileSystemInfo(FileSystemInfo info);
 
@@ -23,11 +23,51 @@ namespace Wynnsharp
                     onInfo(file);
                 }
             }
+            else if (File.Exists(path))
+            {
+                var info = new FileInfo(path);
+                onInfo(info);
+            }
+            else
+            {
+                throw new Exception("bad file path");
+            }
+        }
+
+        public string GetPath(string path)
+        {
+            if (Directory.Exists(path))
+            {
+                var info = new DirectoryInfo(path);
+                return info.FullName;
+            }
+            else if (File.Exists(path))
+            {
+                var info = new FileInfo(path);
+                return Path.GetDirectoryName(info.FullName);
+            }
+            else
+            {
+                throw new Exception("bad file path");
+            }
         }
 
         public bool IsFolder(FileSystemInfo info)
         {
             return info as DirectoryInfo != null;
+        }
+        public bool IsFile(FileSystemInfo info)
+        {
+            return info as FileInfo != null;
+        }
+
+        public DirectoryInfo AsFolder(FileSystemInfo info)
+        {
+            return info as DirectoryInfo;
+        }
+        public FileInfo AsFile(FileSystemInfo info)
+        {
+            return info as FileInfo;
         }
 
         public void ShowInfo(FileSystemInfo info)

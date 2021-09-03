@@ -4,7 +4,7 @@ using System.IO;
 
 namespace Wynnsharp
 {
-    class XmlUtil
+    public class XmlUtil
     {
         public void Statistics(XmlNode src, XmlNode log)
         {
@@ -64,7 +64,6 @@ namespace Wynnsharp
                         ln = lnode;
                         break;
                     }
-
                 }
                 if (ln == null)
                 {
@@ -77,27 +76,41 @@ namespace Wynnsharp
 
         public void Statistics(string srcfile, string logfile, bool isAppend = false)
         {
-            XmlDocument src = new XmlDocument();
-            src.Load(srcfile);
-            XmlDocument log = new XmlDocument();
             Directory.CreateDirectory(Path.GetDirectoryName(logfile));
             if (!File.Exists(logfile))
             {
                 File.Create(logfile).Close();
             }
-            if (isAppend)
-            {
-                try
-                {
-                    log.Load(logfile);
-                }
-                catch(Exception)
-                {
-
-                }
-            }
+            XmlDocument src = OpenXml(srcfile) ?? new XmlDocument();
+            XmlDocument log = (isAppend ? OpenXml(logfile) : null) ?? new XmlDocument();
             Statistics(src, log);
             log.Save(logfile);
+        }
+
+        public XmlNode GetChildNode(XmlNode parent, string name)
+        {
+            foreach (XmlNode lnode in parent.ChildNodes)
+            {
+                if (lnode.Name == name)
+                {
+                    return lnode;
+                }
+            }
+            return null;
+        }
+
+        public XmlDocument OpenXml(string filename)
+        {
+            XmlDocument file = new XmlDocument();
+            try
+            {
+                file.Load(filename);
+            }
+            catch (Exception)
+            {
+                return null;
+            }
+            return file;
         }
     }
 }
