@@ -94,11 +94,12 @@ public class Csd2UnityPrefab : ScriptableWizard
         // return new Plist(pd.version, metadata, frames);
     }
 
-    public void ConventCsd(string rootPath, string csdPath, string[] extraPath, string outpath)
+    public Cocos2Unity.Convertor ConventCsd(string rootPath, string csdPath, string[] extraPath, string outpath)
     {
         var convertor = new Cocos2Unity.Convertor();
         convertor.SetPath(rootPath, extraPath);
         convertor.Convert(csdPath, outpath);
+        return convertor;
     }
 
     public void ConventCsds()
@@ -118,7 +119,8 @@ public class Csd2UnityPrefab : ScriptableWizard
                 string[] extraPath;
                 string csdPath = TryGetRootPath(fullName, out rootPath, out extraPath);
                 string outpath = fs.GetPath(fullName).Replace('\\', '/').Replace(relativePath, OutPath);
-                ConventCsd(rootPath, csdPath, extraPath, outpath);
+                var convertor = ConventCsd(rootPath, csdPath, extraPath, outpath);
+                Cocos2Unity.ParseMeta.SwapAccessLog(convertor.OutFolder + "log/access.xml");
             }
         });
     }
