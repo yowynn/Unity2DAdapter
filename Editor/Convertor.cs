@@ -1,15 +1,12 @@
 using System;
-using System.Xml;
 using System.IO;
 using System.Collections.Generic;
 using UnityEngine;
-using UnityEngine.UI;
 using UnityEditor;
-using System.Text.RegularExpressions;
 
 namespace Cocos2Unity
 {
-    public class Convertor
+    public abstract class Convertor
     {
         public class ConvertedSprite
         {
@@ -20,13 +17,15 @@ namespace Cocos2Unity
         }
 
         public static System.Random Random = new System.Random();
+        public static Wynnsharp.XmlUtil XML = new Wynnsharp.XmlUtil();
         public string ProjectPath;
         public List<string> ResPath;
-        public string CsdFile;
+        public string InFolder;
         public string OutFolder;
         private CsdParser parser;
 
-        public void SetPath(string projectPath, string[] resPath)
+        protected abstract GameObject ObjectConvert(CsdNode node, GameObject parent = null);
+        public void SetRootPath(string projectPath, string[] resPath)
         {
             if (Directory.Exists(projectPath))
             {
@@ -59,271 +58,132 @@ namespace Cocos2Unity
             }
         }
 
-        public void SetTransTo(string csdFile, string outFolder)
+        public void SetMapPath(string inFolder, string outFolder)
         {
-            csdFile = csdFile.Replace('\\', '/');
-            if (Path.GetExtension(csdFile).ToLower() == ".csd")
+            if (Directory.Exists(inFolder))
             {
-                if (File.Exists(csdFile))
+                inFolder = inFolder.Replace('\\', '/');
+                inFolder += inFolder.EndsWith("/") ? "" : "/";
+                inFolder = TryGetPathFromProject(inFolder);
+                if (inFolder != null)
                 {
-                    CsdFile = csdFile;
-                }
-                else if (ProjectPath != null && File.Exists(ProjectPath + csdFile))
-                {
-                    CsdFile = ProjectPath + csdFile;
+                    InFolder = inFolder;
                 }
                 else
                 {
-                    throw new Exception("no csd file found");
+                    throw new Exception();
                 }
             }
             else
             {
-                throw new Exception("not a csd file");
+                throw new Exception();
             }
-            OutFolder = Directory.CreateDirectory(outFolder).FullName.Replace('\\', '/') + "/";
+            outFolder += outFolder.EndsWith("/") ? "" : "/";
+            outFolder = TryGetPathFromAsset(outFolder);
+            if (outFolder != null)
+            {
+                OutFolder = outFolder;
+            }
+            else
+            {
+                throw new Exception();
+            }
         }
 
-        public void Convert(string csdFile, string outFolder)
+        public void Convert(string csdpath)
         {
-            SetTransTo(csdFile, outFolder);
-            var xml = new Wynnsharp.XmlUtil().OpenXml(CsdFile);
+            csdpath = csdpath.Replace('\\', '/');
+            var fullpath = TryGetFullResPath(csdpath);
+            var xml = XML.OpenXml(fullpath);
             parser = new CsdParser(xml);
-            var root = ConvertCanvasGameObject(parser.Node);
+            var root = ObjectConvert(parser.Node);
             var s = UnityEditor.SceneManagement.StageUtility.GetCurrentStageHandle().FindComponentsOfType<Canvas>()[0];
             root.transform.SetParent(s.transform, false);
+
+            var prefabPath = TryGetOutPath(csdpath, ".prefab");
+            PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
         }
 
-        private GameObject ConvertCanvasGameObject(CsdNode node, GameObject parent = null)
+        public bool IsConverted(string respath)
         {
-            // ! do not change the order!!
-            var go = new GameObject();
-            var rt = go.AddComponent<RectTransform>();
-            if (parent != null)
+            respath = respath.Replace('\\', '/');
+            var prefabPath = TryGetOutPath(respath, ".prefab");
+            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+            if (prefab == null)
             {
-                go.transform.SetParent(parent.transform, false);
+                return false;
             }
-            ConvertCanvasGameObject_Name(go, node.Name);
-            ConvertCanvasGameObject_isActive(go, node.isActive);
-            ConvertCanvasGameObject_Size(go, node.Size);
-            ConvertCanvasGameObject_Position(go, node.Position);
-            ConvertCanvasGameObject_Rotation(go, node.Rotation);
-            ConvertCanvasGameObject_Scale(go, node.Scale);
-            ConvertCanvasGameObject_Pivot(go, node.Pivot);
-            ConvertCanvasGameObject_Anchor(go, node.Anchor);
-            ConvertCanvasGameObject_Image(go, node.Image);
-            ConvertCanvasGameObject_Color(go, node.Color);
-            ConvertCanvasGameObject_isInteractive(go, node.isInteractive);
-            ConvertCanvasGameObject_BackgroundColor(go, node.BackgroundColor);
-            ConvertCanvasGameObject_Children(go, node.Children);
-            return go;
-        }
-        private Action<GameObject, string> ConvertCanvasGameObject_Name = (go, val) => go.name = val;
-        private Action<GameObject, bool> ConvertCanvasGameObject_isActive = (go, val) => go.SetActive(val);
-        private Action<GameObject, CsdSize> ConvertCanvasGameObject_Size = (go, val) => go.GetComponent<RectTransform>().sizeDelta = new Vector2(val.X, val.Y);
-        private Action<GameObject, CsdSize> ConvertCanvasGameObject_Position = (go, val) =>
-        {
-            var rt = go.GetComponent<RectTransform>();
-            rt.anchorMin = Vector2.zero;
-            rt.anchorMax = Vector2.zero;
-            rt.anchoredPosition3D = new Vector3(val.X, val.Y, val.Z);
-        };
-
-        private Action<GameObject, CsdSize> ConvertCanvasGameObject_Rotation = (go, val) => go.GetComponent<RectTransform>().Rotate(val.X, val.Y, val.Z);
-        private Action<GameObject, CsdScale> ConvertCanvasGameObject_Scale = (go, val) => go.GetComponent<RectTransform>().localScale = new Vector3(val.X, val.Y, val.Z);
-        private Action<GameObject, CsdScale> ConvertCanvasGameObject_Pivot = (go, val) => go.GetComponent<RectTransform>().pivot = new Vector2(val.X, val.Y);
-        private Action<GameObject, CsdScale> ConvertCanvasGameObject_Anchor = (go, val) =>
-        {
-            var rt = go.GetComponent<RectTransform>();
-            var pos = rt.localPosition;
-            var sizeDelta = rt.sizeDelta;
-            rt.anchorMin = new Vector2(val.X, val.Y);
-            rt.anchorMax = new Vector2(val.X, val.Y);
-            rt.localPosition = pos;
-            rt.sizeDelta = sizeDelta;
-        };
-        private Action<GameObject, CsdScale> ConvertCanvasGameObject_AnchorMax = (go, val) => go.GetComponent<RectTransform>().anchorMax = new Vector2(val.X, val.Y);
-        private void ConvertCanvasGameObject_Image(GameObject go, CsdFile val) { if (val != null) LoadCanvasImage(go, val); }
-        private void ConvertCanvasGameObject_Color(GameObject go, CsdColor val) { if (val != null) SetCanvasImageColor(go, val); }
-        private void ConvertCanvasGameObject_isInteractive(GameObject go, bool val) { SetCanvasImageInteractive(go, val); }
-        private Action<GameObject, CsdColorGradient> ConvertCanvasGameObject_BackgroundColor = (go, val) => {/* TODO */ };
-        private void ConvertCanvasGameObject_Children(GameObject go, List<CsdNode> val) { if (val != null) foreach (var child in val) ConvertCanvasGameObject(child, go); }
-
-        private void LoadCanvasImage(GameObject go, CsdFile imageData)
-        {
-            var image = go.GetComponent<Image>();
-            if (!image)
+            else
             {
-                image = go.AddComponent<Image>();
-            }
-            // image.color = new Color(Random.Next(100) / 100f, Random.Next(100) / 100f, Random.Next(100) / 100f);
-            var convertedSprite = ImportPlist(imageData.Plist)?[imageData.Path] ?? ImportSprite(imageData.Path);
-            if (convertedSprite?.sprite != null)
-            {
-                image.sprite = convertedSprite.sprite;
-                if (convertedSprite.rotated)
-                {
-                    // image.transform.localRotation = Quaternion.Euler(0, 0, 90);
-                    image.transform.Rotate(0, 0, 90);
-                    var rt = image.GetComponent<RectTransform>();
-                    rt.sizeDelta = new Vector2(rt.sizeDelta.y, rt.sizeDelta.x);
-                    rt.pivot = new Vector2(rt.pivot.y, 1 - rt.pivot.x);
-                }
+                return true;
             }
         }
 
-        private void SetCanvasImageColor(GameObject go, CsdColor color)
-        {
-            var image = go.GetComponent<Image>();
-            if (!image)
-            {
-                // image = go.AddComponent<Image>();
-                return;
-            }
-            image.color = new Color(color.R, color.G, color.B, color.A);
-        }
-
-        private void SetCanvasImageInteractive(GameObject go, bool isInteractive)
-        {
-            var image = go.GetComponent<Image>();
-            if (!image)
-            {
-                if (isInteractive)
-                {
-                    image = go.AddComponent<Image>();
-                    image.color = Color.clear;
-                }
-                else
-                {
-                    return;
-                }
-            }
-            image.raycastTarget = isInteractive;
-        }
-
-        private string TryGetFullResPath(string path)
+        private string TryGetFullResPath(string respath)
         {
             foreach (var p in ResPath)
             {
-                if (File.Exists(p + path))
+                if (File.Exists(p + respath))
                 {
-                    return p + path;
+                    return p + respath;
                 }
             }
             return null;
         }
-        private string TryGetFullOutPath(string path)
+
+        private string TryGetOutPath(string respath, string changedExtension = null)
         {
-            var outpath = OutFolder + Path.GetFileName(path);
+            string outpath;
+            if (respath.Contains(InFolder))
+            {
+                outpath = respath.Replace(InFolder, OutFolder);
+            }
+            else
+            {
+                outpath = OutFolder + Path.GetFileName(respath);
+            }
+            if (changedExtension != null)
+            {
+                outpath = Path.ChangeExtension(outpath, changedExtension);
+            }
             return outpath;
         }
 
-        private string TryGetPathFromAsset(string path)
+        private string TryGetFullOutPath(string outpath)
         {
-            path = path.Replace('\\', '/');
-            var assetPath = Application.dataPath.Replace('\\', '/');
-            if (path.Contains(assetPath))
+            if (outpath.StartsWith("Assets"))
             {
-                return path.Replace(assetPath, "Assets");
+                var assetPath = Application.dataPath.Replace('\\', '/');
+                var fullpath = outpath.Replace("Assets", assetPath);
+                Directory.CreateDirectory(Path.GetDirectoryName(fullpath));
+                return fullpath;
             }
             return null;
         }
-        private void ConvertPlist(string plist, string mergeimg)
+
+        private static string TryGetPathFromAsset(string fullpath)
         {
-            mergeimg = TryGetPathFromAsset(mergeimg);
-            AssetDatabase.ImportAsset(mergeimg);
-            var pd = new PlistDocument();
-            pd.ReadFromFile(plist);
-            TextureImporter importer = (TextureImporter)TextureImporter.GetAtPath(mergeimg);
-            importer.textureType = TextureImporterType.Sprite;
-            importer.spriteImportMode = SpriteImportMode.Multiple;
-
-            var frames = pd.root["frames"].AsDict().values;
-            var spritesheet = new SpriteMetaData[frames.Count];
-            int idx = 0;
-            var size = StringToVector2(pd.root["metadata"].AsDict().values["size"].AsString());
-            foreach(var frame in frames)
+            fullpath = fullpath.Replace('\\', '/');
+            var assetPath = Application.dataPath.Replace('\\', '/');
+            if (fullpath.Contains(assetPath))
             {
-                var name = frame.Key;
-                var props = frame.Value.AsDict().values;
-                var md = new SpriteMetaData();
-                md.name = Path.GetFileName(name);
-                Rect rect = default;
-                bool rotated = false;
-                foreach (var prop in props)
-                {
-                    switch (prop.Key)
-                    {
-                        case "frame":
-                            {
-                                var val = StringToRect(prop.Value.AsString());
-                                rect = val;
-                                break;
-                            }
-                        case "offset":
-                            {
-                                var val = StringToVector2(prop.Value.AsString());
-                                break;
-                            }
-                        case "rotated":
-                            {
-                                var val = prop.Value.AsBoolean();
-                                rotated = val;
-                                break;
-                            }
-                        case "sourceSize":
-                            {
-                                var val = StringToVector2(prop.Value.AsString());
-                                break;
-                            }
-                        default:
-                            {
-                                Debug.Log($"{prop.Key} not handled");
-                                break;
-                            }
-                    }
-                }
-                if (rotated)
-                {
-                    var h = rect.height;
-                    rect.height = rect.width;
-                    rect.width = h;
-                }
-                rect.y = size.y - rect.y - rect.height;
+                return fullpath.Replace(assetPath, "Assets");
+            }
+            return null;
+        }
 
-                md.rect = rect;
-                spritesheet[idx++] = md;
-            }
-            importer.spritesheet = spritesheet;
-            EditorUtility.SetDirty(importer);
-            importer.SaveAndReimport();
-            var sprites = AssetDatabase.LoadAllAssetsAtPath(mergeimg);
-            foreach (var obj in sprites)
+        private string TryGetPathFromProject(string fullpath)
+        {
+            fullpath = fullpath.Replace('\\', '/');
+            if (fullpath.Contains(ProjectPath))
             {
-                Sprite sprite = obj as Sprite;
-                // if (sprite)
-                // {
-                //     len = sprites.Count;
-                //     for (int i = 0; i < len; ++i)
-                //     {
-                //         if (sprites[i].name.Equals(objSprite.name))
-                //         {
-                //             sprites[i].sprite = objSprite;
-                //         }
-                //     }
-                //     len = images.Count;
-                //     for (int i = 0; i < len; ++i)
-                //     {
-                //         if (images[i].name.Equals(objSprite.name))
-                //         {
-                //             images[i].sprite = objSprite;
-                //         }
-                //     }
-                // }
+                return fullpath.Replace(ProjectPath, "");
             }
+            return null;
         }
 
         private Dictionary<string, Dictionary<string, ConvertedSprite>> Plists = new Dictionary<string, Dictionary<string, ConvertedSprite>>();
+
         private Dictionary<string, ConvertedSprite> Sprites = new Dictionary<string, ConvertedSprite>();
 
         private Dictionary<string, ConvertedSprite> ImportPlist(string plist)
@@ -338,12 +198,13 @@ namespace Cocos2Unity
                 spriteMap = new Dictionary<string, ConvertedSprite>();
                 Plists.Add(plist, spriteMap);
                 var plistPath = TryGetFullResPath(plist);
-                var imgPath = TryGetFullResPath(Path.ChangeExtension(plist, ".png"));
-                if (plistPath != null && imgPath != null)
+                var imgPath = Path.ChangeExtension(plist, ".png");
+                var imgFromPath = TryGetFullResPath(imgPath);
+                if (plistPath != null && imgFromPath != null)
                 {
-                    var assetPath = TryGetFullOutPath(imgPath);
-                    File.Copy(imgPath, assetPath, true);
-                    assetPath = TryGetPathFromAsset(assetPath);
+                    var assetPath = TryGetOutPath(imgPath);
+                    var imgToPath = TryGetFullOutPath(assetPath);
+                    File.Copy(imgFromPath, imgToPath, true);
                     AssetDatabase.ImportAsset(assetPath);
 
                     TextureImporter importer = (TextureImporter)TextureImporter.GetAtPath(assetPath);
@@ -422,7 +283,6 @@ namespace Cocos2Unity
                         Sprite sprite = obj as Sprite;
                         if (sprite)
                         {
-                            // Debug.Log($"{sprite.name}  {sprite.packed}  {sprite.packingMode}  {sprite.packingRotation}");
                             foreach (var pairs in spriteMap)
                             {
                                 var convertedSprite = pairs.Value;
@@ -462,12 +322,12 @@ namespace Cocos2Unity
                 convertedSprite.name = Path.GetFileNameWithoutExtension(convertedSprite.fullname);
                 convertedSprite.rotated = false;
 
-                var imgPath = TryGetFullResPath(path);
-                if (imgPath != null)
+                var imgFromPath = TryGetFullResPath(path);
+                if (imgFromPath != null)
                 {
-                    var assetPath = TryGetFullOutPath(imgPath);
-                    File.Copy(imgPath, assetPath, true);
-                    assetPath = TryGetPathFromAsset(assetPath);
+                    var assetPath = TryGetOutPath(path);
+                    var imgToPath = TryGetFullOutPath(assetPath);
+                    File.Copy(imgFromPath, assetPath, true);
                     AssetDatabase.ImportAsset(assetPath);
 
                     TextureImporter importer = (TextureImporter)TextureImporter.GetAtPath(assetPath);
@@ -499,6 +359,39 @@ namespace Cocos2Unity
             return convertedSprite;
         }
 
+        protected ConvertedSprite GetSprite(CsdFile imageData)
+        {
+            var convertedSprite = ImportPlist(imageData.Plist)?[imageData.Path] ?? ImportSprite(imageData.Path);
+            return convertedSprite;
+        }
+
+        protected GameObject CreateFromPrefab(CsdFile prefabData)
+        {
+            GameObject go = null;
+            if (prefabData == null)
+            {
+                go = new GameObject();
+            }
+            else
+            {
+                var csdFile = prefabData.Path;
+                if (!IsConverted(csdFile))
+                {
+                    Convert(csdFile);
+                }
+                var prefabPath = TryGetOutPath(csdFile, ".prefab");
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+                if (prefab)
+                {
+                    go = GameObject.Instantiate<GameObject>(prefab);
+                }
+                else
+                {
+                    go = new GameObject();
+                }
+            }
+            return go;
+        }
 
         private static Rect StringToRect(string val)
         {
@@ -510,6 +403,111 @@ namespace Cocos2Unity
         {
             var nums = val.Replace("{", "").Replace("}", "").Split(',');
             return new Vector2(int.Parse(nums[0]), int.Parse(nums[1]));
+        }
+
+        private static Func<Convertor> ConvertorGroupNew;
+
+
+
+        public class ConvertorProjects<TarConvertor> where TarConvertor : Convertor, new()
+        {
+            public static Wynnsharp.FileSystemUtil FS = new Wynnsharp.FileSystemUtil();
+
+            public struct ProjectInfo
+            {
+                public string projectName;
+                public string projectPath;
+                public string cocosstudioPath;
+                public string resPath;
+                public string findPath;
+            }
+            public List<ProjectInfo> Projects;
+            public string OutFolder;
+
+            public void Convert(string path, string outPath)
+            {
+                AnalyseInPath(path);
+                AnalyseOutPath(outPath);
+                foreach (var project in Projects)
+                {
+                    ConvertorProject(project);
+                }
+            }
+
+            private void AnalyseInPath(string path)
+            {
+                path = FS.GetPathInfo(path)?.FullName;
+                if (path == null)
+                {
+                    throw new Exception("path not find");
+                }
+                Projects = new List<ProjectInfo>();
+                var found = false;
+                var parentpath = Path.GetDirectoryName(path);
+                while (parentpath != null && !found)
+                {
+                    FS.EnumPath(parentpath, f =>
+                    {
+                        if (!FS.IsFolder(f) && f.Extension.ToLower() == ".ccs" && !found)
+                        {
+                            var projectInfo = new ProjectInfo();
+                            projectInfo.projectPath = Path.GetDirectoryName(f.FullName);
+                            projectInfo.projectName = Path.GetFileName(projectInfo.projectPath);
+                            projectInfo.cocosstudioPath = projectInfo.projectPath + "\\cocosstudio\\";
+                            projectInfo.resPath = projectInfo.projectPath + "\\res\\";
+                            projectInfo.findPath = path.Replace(projectInfo.projectPath + "\\", "");
+                            Projects.Add(projectInfo);
+                            found = true;
+                        }
+                    }, false);
+                    parentpath = Path.GetDirectoryName(parentpath);
+                }
+                if (!found)
+                {
+                    FS.EnumPath(path, f =>
+                    {
+                        if (!FS.IsFolder(f) && f.Extension.ToLower() == ".ccs")
+                        {
+                            var projectInfo = new ProjectInfo();
+                            projectInfo.projectPath = Path.GetDirectoryName(f.FullName);
+                            projectInfo.projectName = Path.GetFileName(projectInfo.projectPath);
+                            projectInfo.cocosstudioPath = projectInfo.projectPath + "\\cocosstudio\\";
+                            projectInfo.resPath = projectInfo.projectPath + "\\res\\";
+                            projectInfo.findPath = "cocosstudio";
+                            Projects.Add(projectInfo);
+                        }
+                    });
+                }
+            }
+
+            private void AnalyseOutPath(string path)
+            {
+                if (TryGetPathFromAsset(path) == null)
+                {
+                    throw new Exception("outpath must in Assets");
+                }
+                OutFolder = Directory.CreateDirectory(path).FullName;
+            }
+
+            private void ConvertorProject(ProjectInfo project)
+            {
+                var findPath = project.projectPath + "\\" + project.findPath;
+                TarConvertor convertor = new TarConvertor();
+                convertor.SetRootPath(project.cocosstudioPath, new string[] { project.resPath, });
+                convertor.SetMapPath(FS.GetPath(findPath), OutFolder + "\\" + project.projectName);
+                FS.EnumPath(findPath, f =>
+                {
+                    if (!FS.IsFolder(f) && f.Extension.ToLower() == ".csd")
+                    {
+                        var csdresname = f.FullName.Replace(project.cocosstudioPath, "");
+                        if (!convertor.IsConverted(csdresname))
+                        {
+                            convertor.Convert(csdresname);
+                        }
+                    }
+                });
+                Cocos2Unity.ParseMeta.SwapAccessLog(convertor.OutFolder + "unhandled.xml");
+            }
         }
 
     }

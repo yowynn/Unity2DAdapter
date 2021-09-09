@@ -11,7 +11,7 @@ namespace Cocos2Unity
             var xml = new Wynnsharp.XmlUtil();
 
             path = "C:/Users/Wynn/Desktop/book";
-            fs.EnumFolder(path, f =>
+            fs.EnumPath(path, f =>
             {
                 if (!fs.IsFolder(f) && f.Extension.ToLower() == ".csd")
                 {

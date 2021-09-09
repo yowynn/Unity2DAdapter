@@ -238,6 +238,7 @@ namespace Cocos2Unity
         public CsdScale Pivot;
         public CsdScale Anchor;
         public CsdFile Image;
+        public CsdFile Prefab;
         public CsdColor Color;
         public CsdColorGradient BackgroundColor;
         public List<CsdNode> Children;
@@ -254,7 +255,18 @@ namespace Cocos2Unity
             Anchor = GenAnchors(e, parent);
             if (GetElement(e, "FileData") != null)
             {
-                Image = new CsdFile(GetElement(e, "FileData"));
+                var tar = new CsdFile(GetElement(e, "FileData"));
+                switch (tar.Type)
+                {
+                    case "Normal":
+                        Prefab = tar;
+                        break;
+                    case "MarkedSubImage":
+                        Image = tar;
+                        break;
+                    default:
+                        throw new Exception();
+                }
             }
             if (GetElement(e, "CColor") != null)
             {
