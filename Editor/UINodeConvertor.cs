@@ -34,8 +34,8 @@ namespace Cocos2Unity
         }
         private Action<GameObject, string> ConvertCanvasGameObject_Name = (go, val) => go.name = val;
         private Action<GameObject, bool> ConvertCanvasGameObject_isActive = (go, val) => go.SetActive(val);
-        private Action<GameObject, CsdSize> ConvertCanvasGameObject_Size = (go, val) => go.GetComponent<RectTransform>().sizeDelta = new Vector2(val.X, val.Y);
-        private Action<GameObject, CsdSize> ConvertCanvasGameObject_Position = (go, val) =>
+        private Action<GameObject, CsdVector3> ConvertCanvasGameObject_Size = (go, val) => go.GetComponent<RectTransform>().sizeDelta = new Vector2(val.X, val.Y);
+        private Action<GameObject, CsdVector3> ConvertCanvasGameObject_Position = (go, val) =>
         {
             var rt = go.GetComponent<RectTransform>();
             rt.anchorMin = Vector2.zero;
@@ -43,10 +43,10 @@ namespace Cocos2Unity
             rt.anchoredPosition3D = new Vector3(val.X, val.Y, val.Z);
         };
 
-        private Action<GameObject, CsdSize> ConvertCanvasGameObject_Rotation = (go, val) => go.GetComponent<RectTransform>().Rotate(val.X, val.Y, val.Z);
-        private Action<GameObject, CsdScale> ConvertCanvasGameObject_Scale = (go, val) => go.GetComponent<RectTransform>().localScale = new Vector3(val.X, val.Y, val.Z);
-        private Action<GameObject, CsdScale> ConvertCanvasGameObject_Pivot = (go, val) => go.GetComponent<RectTransform>().pivot = new Vector2(val.X, val.Y);
-        private Action<GameObject, CsdScale> ConvertCanvasGameObject_Anchor = (go, val) =>
+        private Action<GameObject, CsdVector3> ConvertCanvasGameObject_Rotation = (go, val) => go.GetComponent<RectTransform>().Rotate(val.X, val.Y, val.Z);
+        private Action<GameObject, CsdVector3> ConvertCanvasGameObject_Scale = (go, val) => go.GetComponent<RectTransform>().localScale = new Vector3(val.X, val.Y, val.Z);
+        private Action<GameObject, CsdVector3> ConvertCanvasGameObject_Pivot = (go, val) => go.GetComponent<RectTransform>().pivot = new Vector2(val.X, val.Y);
+        private Action<GameObject, CsdVector3> ConvertCanvasGameObject_Anchor = (go, val) =>
         {
             var rt = go.GetComponent<RectTransform>();
             var pos = rt.localPosition;
@@ -56,7 +56,7 @@ namespace Cocos2Unity
             rt.localPosition = pos;
             rt.sizeDelta = sizeDelta;
         };
-        private Action<GameObject, CsdScale> ConvertCanvasGameObject_AnchorMax = (go, val) => go.GetComponent<RectTransform>().anchorMax = new Vector2(val.X, val.Y);
+        private Action<GameObject, CsdVector3> ConvertCanvasGameObject_AnchorMax = (go, val) => go.GetComponent<RectTransform>().anchorMax = new Vector2(val.X, val.Y);
         private void ConvertCanvasGameObject_Image(GameObject go, CsdFile val) { if (val != null) LoadCanvasImage(go, val); }
         private void ConvertCanvasGameObject_Color(GameObject go, CsdColor val) { if (val != null) SetCanvasImageColor(go, val); }
         private void ConvertCanvasGameObject_isInteractive(GameObject go, bool val) { SetCanvasImageInteractive(go, val); }
@@ -126,6 +126,16 @@ namespace Cocos2Unity
             image.raycastTarget = isInteractive;
         }
 
+        protected override AnimationClip AnimConvert(GameObject node)
+        {
+            AnimationClip clip = new AnimationClip();
+            clip.SampleAnimation(node, 10);
+            return clip;
+            // clip.SetCurve("", typeof(Transform), "position.x", AnimationCurve.EaseInOut(0, 0, 2, 10));
+            // clip.SetCurve("", typeof(Transform), "position.y", AnimationCurve.EaseInOut(0, 10, 2, 0));
+            // clip.SetCurve("", typeof(Transform), "position.z", AnimationCurve.EaseInOut(0, 5, 2, 2));
 
+            // AssetDatabase.CreateAsset(clip, "Assets/Test.anim");
+        }
     }
 }

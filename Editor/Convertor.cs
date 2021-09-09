@@ -25,6 +25,7 @@ namespace Cocos2Unity
         private CsdParser parser;
 
         protected abstract GameObject ObjectConvert(CsdNode node, GameObject parent = null);
+        protected abstract AnimationClip AnimConvert(GameObject node);
         public void SetRootPath(string projectPath, string[] resPath)
         {
             if (Directory.Exists(projectPath))
@@ -99,6 +100,10 @@ namespace Cocos2Unity
             var root = ObjectConvert(parser.Node);
             var s = UnityEditor.SceneManagement.StageUtility.GetCurrentStageHandle().FindComponentsOfType<Canvas>()[0];
             root.transform.SetParent(s.transform, false);
+
+            var clip = AnimConvert(root);
+            var clipPath = TryGetOutPath(csdpath, ".anim");
+            AssetDatabase.CreateAsset(clip, clipPath);
 
             var prefabPath = TryGetOutPath(csdpath, ".prefab");
             PrefabUtility.SaveAsPrefabAsset(root, prefabPath);

@@ -1,16 +1,21 @@
 using System;
 using System.Xml;
+using System.Collections;
 using System.Collections.Generic;
 
 namespace Cocos2Unity
 {
-    public class ParseMeta
+    public interface ICsdFrame<T>
+    {
+        CsdFrame<T> GetFrame(XmlElement frame, float timeScale = 1);
+    }
+    public abstract class ParseMeta
     {
         public static bool GetBoolAttribute(XmlElement e, string attrName, bool defaultValue = false)
         {
             if (e == null) return defaultValue;
             AccessStatAttribute(e, attrName);
-            string val = e.Attributes?[attrName]?.Value;
+            string val = GetAttribute(e, attrName)?.Value;
             if (val == "True") return true;
             if (val == "False") return false;
             return defaultValue;
@@ -19,7 +24,7 @@ namespace Cocos2Unity
         {
             if (e == null) return defaultValue;
             AccessStatAttribute(e, attrName);
-            string val = e.Attributes?[attrName]?.Value;
+            string val = GetAttribute(e, attrName)?.Value;
             if (val != null) return val;
             return defaultValue;
         }
@@ -27,7 +32,7 @@ namespace Cocos2Unity
         {
             if (e == null) return defaultValue;
             AccessStatAttribute(e, attrName);
-            string val = e.Attributes?[attrName]?.Value;
+            string val = GetAttribute(e, attrName)?.Value;
             if (val != null) return float.Parse(val);
             return defaultValue;
         }
@@ -35,9 +40,14 @@ namespace Cocos2Unity
         {
             if (e == null) return defaultValue;
             AccessStatAttribute(e, attrName);
-            string val = e.Attributes?[attrName]?.Value;
+            string val = GetAttribute(e, attrName)?.Value;
             if (val != null) return int.Parse(val);
             return defaultValue;
+        }
+
+        public static XmlAttribute GetAttribute(XmlElement e, string attrName)
+        {
+            return e?.Attributes?[attrName];
         }
 
         public static XmlElement GetElement(XmlElement e, string eleName)
@@ -135,29 +145,29 @@ namespace Cocos2Unity
         }
     }
 
-    public class CsdSize : ParseMeta
+    public class CsdVector3 : ParseMeta, ICsdFrame<CsdVector3>
     {
         public float X;
         public float Y;
         public float Z;
-        public CsdSize(XmlElement e)
+        public CsdVector3(XmlElement e, float defaultValue = 0f)
         {
-            X = GetFloatAttribute(e, "X", 0);
-            Y = GetFloatAttribute(e, "Y", 0);
-            Z = GetFloatAttribute(e, "Z", 0);
+            X = GetFloatAttribute(e, "X", defaultValue);
+            Y = GetFloatAttribute(e, "Y", defaultValue);
+            Z = GetFloatAttribute(e, "Z", defaultValue);
         }
-    }
-
-    public class CsdScale : ParseMeta
-    {
-        public float X;
-        public float Y;
-        public float Z;
-        public CsdScale(XmlElement e, float defaultValue = 0)
+        public static CsdVector3 FromScale(XmlElement e, float defaultValue = 0f)
         {
-            X = GetFloatAttribute(e, "ScaleX", defaultValue);
-            Y = GetFloatAttribute(e, "ScaleY", defaultValue);
-            Z = GetFloatAttribute(e, "ScaleZ", defaultValue);
+            var v3 = new CsdVector3(null);
+            v3.X = GetFloatAttribute(e, "ScaleX", defaultValue);
+            v3.Y = GetFloatAttribute(e, "ScaleY", defaultValue);
+            v3.Z = GetFloatAttribute(e, "ScaleZ", defaultValue);
+            return v3;
+        }
+
+        public CsdFrame<CsdVector3> GetFrame(XmlElement frame, float timeScale = 1)
+        {
+            throw new NotImplementedException();
         }
     }
 
@@ -187,7 +197,7 @@ namespace Cocos2Unity
         public ColorMode Mode;
         public CsdColor FromColor;
         public CsdColor ToColor;
-        public CsdScale Direction;
+        public CsdVector3 Direction;
 
         public static CsdColorGradient NewNone()
         {
@@ -202,7 +212,7 @@ namespace Cocos2Unity
             cdg.FromColor = color;
             return cdg;
         }
-        public static CsdColorGradient NewGradient(CsdColor color1, CsdColor color2, CsdScale dir)
+        public static CsdColorGradient NewGradient(CsdColor color1, CsdColor color2, CsdVector3 dir)
         {
             var cdg = new CsdColorGradient();
             cdg.Mode = ColorMode.Gradient;
@@ -226,17 +236,30 @@ namespace Cocos2Unity
         }
     }
 
+    public class CsdFrame<T> : ParseMeta where T : ICsdFrame<T>
+    {
+        public float Time;
+        public T Value;
+
+        public CsdFrame(float time, T value)
+        {
+            Time = time;
+            Value = value;
+        }
+    }
+
     public class CsdNode : ParseMeta
     {
         public string Name;
+        public int? ActionTag;
         public bool isActive;
         public bool isInteractive;
-        public CsdSize Position;
-        public CsdSize Rotation;
-        public CsdScale Scale;
-        public CsdSize Size;
-        public CsdScale Pivot;
-        public CsdScale Anchor;
+        public CsdVector3 Position;
+        public CsdVector3 Rotation;
+        public CsdVector3 Scale;
+        public CsdVector3 Size;
+        public CsdVector3 Pivot;
+        public CsdVector3 Anchor;
         public CsdFile Image;
         public CsdFile Prefab;
         public CsdColor Color;
@@ -245,13 +268,14 @@ namespace Cocos2Unity
         public CsdNode(XmlElement e, CsdNode parent = null)
         {
             Name = GetStringAttribute(e, "Name");
+            ActionTag = GetAttribute(e, "ActionTag") != null ? (GetIntegerAttribute(e, "ActionTag", 0)) : (int?)null;
             isActive = GetBoolAttribute(e, "VisibleForFrame", true);
             isInteractive = GetBoolAttribute(e, "TouchEnable", false);
-            Position = new CsdSize(GetElement(e, "Position"));
+            Position = new CsdVector3(GetElement(e, "Position"));
             Rotation = GenRotation(e);
-            Scale = new CsdScale(GetElement(e, "Scale"), 1f);
-            Size = new CsdSize(GetElement(e, "Size"));
-            Pivot = new CsdScale(GetElement(e, "AnchorPoint"), 0f);
+            Scale = CsdVector3.FromScale(GetElement(e, "Scale"), 1f);
+            Size = new CsdVector3(GetElement(e, "Size"));
+            Pivot = CsdVector3.FromScale(GetElement(e, "AnchorPoint"), 0f);
             Anchor = GenAnchors(e, parent);
             if (GetElement(e, "FileData") != null)
             {
@@ -287,7 +311,7 @@ namespace Cocos2Unity
             }
         }
 
-        public static CsdColorGradient GenBackgroundColor(XmlElement e)
+        private static CsdColorGradient GenBackgroundColor(XmlElement e)
         {
             CsdColorGradient backgroundColor = null;
             var BackgroundType = GetIntegerAttribute(e, "ComboBoxIndex", 0);
@@ -298,7 +322,7 @@ namespace Cocos2Unity
             color1.A = Alpha;
             var color2 = new CsdColor(GetElement(e, "EndColor"));
             color2.A = Alpha;
-            var dir = new CsdScale(GetElement(e, "ColorVector"));
+            var dir = CsdVector3.FromScale(GetElement(e, "ColorVector"));
             var dir_ignored = GetFloatAttribute(e, "ColorAngle", 90f);  //same mean as ColorVector, but in degrees
             switch (BackgroundType)
             {
@@ -315,18 +339,18 @@ namespace Cocos2Unity
             return backgroundColor;
         }
 
-        public static CsdScale GenAnchors(XmlElement e, CsdNode parent)
+        private static CsdVector3 GenAnchors(XmlElement e, CsdNode parent)
         {
-            var Anchor = new CsdScale(null);
+            var Anchor = CsdVector3.FromScale(null);
             var HorizontalEdge = GetStringAttribute(e, "HorizontalEdge", "LeftEdge");
             var VerticalEdge = GetStringAttribute(e, "VerticalEdge", "BottomEdge");
             var LeftMargin = GetFloatAttribute(e, "LeftMargin", 0f);
             var RightMargin = GetFloatAttribute(e, "RightMargin", 0f);
             var TopMargin = GetFloatAttribute(e, "TopMargin", 0f);
             var BottomMargin = GetFloatAttribute(e, "BottomMargin", 0f);
-            var parentSize = parent?.Size ?? new CsdSize(null);
-            var Pivot = new CsdScale(GetElement(e, "AnchorPoint"), 0f);
-            var Size = new CsdSize(GetElement(e, "Size"));
+            var parentSize = parent?.Size ?? new CsdVector3(null);
+            var Pivot = CsdVector3.FromScale(GetElement(e, "AnchorPoint"), 0f);
+            var Size = new CsdVector3(GetElement(e, "Size"));
             switch (HorizontalEdge)
             {
                 case "LeftEdge":
@@ -355,9 +379,9 @@ namespace Cocos2Unity
             return Anchor;
         }
 
-        public static CsdSize GenRotation(XmlElement e)
+        private static CsdVector3 GenRotation(XmlElement e)
         {
-            var Rotation = new CsdSize(null);
+            var Rotation = new CsdVector3(null);
             var RotationZ = -GetFloatAttribute(e, "Rotation", 0f);
             var RotationSkewX = -GetFloatAttribute(e, "RotationSkewX", 0f);  // TODO
             var RotationSkewY = -GetFloatAttribute(e, "RotationSkewY", 0f);  // TODO
@@ -365,11 +389,88 @@ namespace Cocos2Unity
             return Rotation;
         }
     }
+
+    public class CsdTimeline : ParseMeta
+    {
+        public CsdTimeline(XmlElement e)
+        {
+
+        }
+
+        public static void ParseList(XmlElement e)
+        {
+            var Duration = GetIntegerAttribute(e, "Duration");
+            var Speed = GetIntegerAttribute(e, "Speed");
+            var ActivedAnimationName = GetStringAttribute(e, "ActivedAnimationName");
+            var FrameScale = 1f / (Speed * 60);
+            foreach(XmlElement timeline in e)
+            {
+                var ID = GetIntegerAttribute(timeline, "ActionTag");
+                var Property = GetStringAttribute(timeline, "Property");
+                ArrayList Frames = new ArrayList();
+                foreach(XmlElement frame in timeline)
+                {
+                    var FrameIndex = GetIntegerAttribute(frame, "FrameIndex");
+                    var FrameTime = FrameIndex * FrameScale;
+                    object Frame = null;
+                    switch (Property)
+                    {
+                        case "Position":
+                            CsdVector3 Value = new CsdVector3(frame);
+                            Frame = new CsdFrame<CsdVector3>(FrameTime, Value);
+                            break;
+                        case "Other":
+                            break;
+                        default:
+                            break;
+                    }
+                    if (Frame != null)
+                    {
+                        Frames.Add(Frame);
+                    }
+                }
+            }
+        }
+
+        public static List<CsdFrame<T>> ParseFrameList<T>(XmlElement timeline, float FrameScale = 1) where T:ICsdFrame<T>,new()
+        {
+            List<CsdFrame<T>> Frames = new List<CsdFrame<T>>();
+            foreach (XmlElement frame in timeline)
+            {
+                new T().GetFrame()
+                var FrameIndex = GetIntegerAttribute(frame, "FrameIndex");
+                var FrameTime = FrameIndex * FrameScale;
+                CsdFrame<T> Frame = null;
+
+                switch (Property)
+                {
+                    case "Position":
+                        CsdVector3 Value = new CsdVector3(frame);
+                        Frame = new CsdFrame<CsdVector3>(FrameTime, Value);
+                        break;
+                    case "Other":
+                        break;
+                    default:
+                        break;
+                }
+                if (Frame != null)
+                {
+                    Frames.Add(Frame);
+                }
+            }
+        }
+
+        // private static Dictionary<int, CsdNode> GenNodeMap(CsdNode root, ref)
+        // {
+
+        // }
+    }
     public class CsdParser
     {
         public String Version;
         public String Name;
         public CsdNode Node;
+        public CsdTimeline Timeline;
         public CsdParser(XmlDocument doc)
         {
             var root = doc["GameProjectFile"];
@@ -382,7 +483,10 @@ namespace Cocos2Unity
             if (content["ObjectData"] != null)
             {
                 Node = new CsdNode(content["ObjectData"]);
+
+                Timeline = new CsdTimeline(content["Animation"]);
             }
         }
+
     }
 }
