@@ -5,11 +5,11 @@ using System.Collections.Generic;
 
 namespace Cocos2Unity
 {
-    public interface ICsdFrame<T>
+    public interface ICsdParse<T> where T : new()
     {
-        CsdFrame<T> GetFrame(XmlElement frame, float timeScale = 1);
+        T Parse(XmlElement e);
     }
-    public abstract class ParseMeta
+    public abstract class CsdType
     {
         public static bool GetBoolAttribute(XmlElement e, string attrName, bool defaultValue = false)
         {
@@ -145,48 +145,70 @@ namespace Cocos2Unity
         }
     }
 
-    public class CsdVector3 : ParseMeta, ICsdFrame<CsdVector3>
+    public class CsdBool : CsdType, ICsdParse<CsdBool>
+    {
+        public bool Value;
+        public CsdBool Parse(XmlElement e)
+        {
+            Value = GetBoolAttribute(e, "Value");
+            return this;
+        }
+        public static implicit operator bool(CsdBool t)
+        {
+            return t.Value;
+        }
+    }
+
+    public class CsdVector3 : CsdType, ICsdParse<CsdVector3>
     {
         public float X;
         public float Y;
         public float Z;
-        public CsdVector3(XmlElement e, float defaultValue = 0f)
+
+        public CsdVector3 Parse(XmlElement e)
+        {
+            return Parse(e, 0f);
+        }
+        public CsdVector3 Parse(XmlElement e, float defaultValue)
         {
             X = GetFloatAttribute(e, "X", defaultValue);
             Y = GetFloatAttribute(e, "Y", defaultValue);
             Z = GetFloatAttribute(e, "Z", defaultValue);
+            return this;
         }
-        public static CsdVector3 FromScale(XmlElement e, float defaultValue = 0f)
+        public CsdVector3 ParseFromScale(XmlElement e, float defaultValue = 0f)
         {
-            var v3 = new CsdVector3(null);
-            v3.X = GetFloatAttribute(e, "ScaleX", defaultValue);
-            v3.Y = GetFloatAttribute(e, "ScaleY", defaultValue);
-            v3.Z = GetFloatAttribute(e, "ScaleZ", defaultValue);
-            return v3;
-        }
-
-        public CsdFrame<CsdVector3> GetFrame(XmlElement frame, float timeScale = 1)
-        {
-            throw new NotImplementedException();
+            X = GetFloatAttribute(e, "ScaleX", defaultValue);
+            Y = GetFloatAttribute(e, "ScaleY", defaultValue);
+            Z = GetFloatAttribute(e, "ScaleZ", defaultValue);
+            return this;
         }
     }
 
-    public class CsdColor : ParseMeta
+    public class CsdColor : CsdType, ICsdParse<CsdColor>
     {
         public float R;
         public float G;
         public float B;
         public float A;
-        public CsdColor(XmlElement e)
+        public CsdColor Parse(XmlElement e)
         {
             R = GetIntegerAttribute(e, "R", 255) / 255f;
             G = GetIntegerAttribute(e, "G", 255) / 255f;
             B = GetIntegerAttribute(e, "B", 255) / 255f;
             A = GetIntegerAttribute(e, "A", 255) / 255f;
+            return this;
+        }
+        public CsdColor Parse(XmlElement e, float Alpha)
+        {
+            Parse(e);
+            Alpha = Alpha > 1f ? 1f : Alpha < 0f ? 0f : Alpha;
+            A = Alpha;
+            return this;
         }
     }
 
-    public class CsdColorGradient : ParseMeta
+    public class CsdColorGradient : CsdType, ICsdParse<CsdColorGradient>
     {
         public enum ColorMode
         {
@@ -195,162 +217,155 @@ namespace Cocos2Unity
             Gradient = 2,
         }
         public ColorMode Mode;
-        public CsdColor FromColor;
-        public CsdColor ToColor;
-        public CsdVector3 Direction;
-
-        public static CsdColorGradient NewNone()
+        public CsdColor Color;
+        public CsdColor ColorA;
+        public CsdColor ColorB;
+        public CsdVector3 ColorVector;
+        public CsdColorGradient Parse(XmlElement e)
         {
-            var cdg = new CsdColorGradient();
-            cdg.Mode = ColorMode.None;
-            return cdg;
+            Mode = (ColorMode)GetIntegerAttribute(e, "ComboBoxIndex", 0);
+            var SingleColor = new CsdColor().Parse(GetElement(e, "SingleColor"));
+            var FirstColor = new CsdColor().Parse(GetElement(e, "FirstColor"));
+            var EndColor = new CsdColor().Parse(GetElement(e, "EndColor"));
+            var Dir = new CsdVector3().ParseFromScale(GetElement(e, "ColorVector"));
+            var Dir_ignored = GetFloatAttribute(e, "ColorAngle", 90f);  //same mean as ColorVector, but in degrees
+            Color = SingleColor;
+            ColorA = FirstColor;
+            ColorB = EndColor;
+            ColorVector = Dir;
+            return this;
         }
-        public static CsdColorGradient NewColor(CsdColor color)
+        public CsdColorGradient Parse(XmlElement e, float Alpha)
         {
-            var cdg = new CsdColorGradient();
-            cdg.Mode = ColorMode.Color;
-            cdg.FromColor = color;
-            return cdg;
-        }
-        public static CsdColorGradient NewGradient(CsdColor color1, CsdColor color2, CsdVector3 dir)
-        {
-            var cdg = new CsdColorGradient();
-            cdg.Mode = ColorMode.Gradient;
-            cdg.FromColor = color1;
-            cdg.ToColor = color2;
-            cdg.Direction = dir;
-            return cdg;
+            Parse(e);
+            Alpha = Alpha > 1f ? 1f : Alpha < 0f ? 0f : Alpha;
+            if (Color != null) Color.A = Alpha;
+            if (ColorA != null) ColorA.A = Alpha;
+            if (ColorB != null) ColorB.A = Alpha;
+            return this;
         }
     }
 
-    public class CsdFile : ParseMeta
+    public class CsdFileLink : CsdType, ICsdParse<CsdFileLink>
     {
         public string Type;
         public string Path;
         public string Plist;
-        public CsdFile(XmlElement e)
+
+        public CsdFileLink Parse(XmlElement e)
         {
+            if (GetElement(e, "TextureFile") != null)
+                e = GetElement(e, "TextureFile");
             Type = GetStringAttribute(e, "Type", null);
             Path = GetStringAttribute(e, "Path", null);
             Plist = GetStringAttribute(e, "Plist", null);
+            return this;
         }
     }
 
-    public class CsdFrame<T> : ParseMeta where T : ICsdFrame<T>
+    public class CsdFrame<T> : CsdType, ICsdParse<CsdFrame<T>> where T : ICsdParse<T>, new()
     {
-        public float Time;
+        public int Key;
+        public float FrameScale;
         public T Value;
+        public float Time => Key * FrameScale;
 
-        public CsdFrame(float time, T value)
+        public CsdFrame<T> Parse(XmlElement e)
         {
-            Time = time;
-            Value = value;
+            return Parse(e, 1 / 60f);
+        }
+
+        public CsdFrame<T> Parse(XmlElement e, float frameScale)
+        {
+            Key = GetIntegerAttribute(e, "FrameIndex");
+            Value = new T().Parse(e);
+            FrameScale = frameScale;
+            return this;
         }
     }
 
-    public class CsdNode : ParseMeta
+    public class CsdNode : CsdType, ICsdParse<CsdNode>
     {
-        public string Name;
-        public int? ActionTag;
-        public bool isActive;
-        public bool isInteractive;
-        public CsdVector3 Position;
-        public CsdVector3 Rotation;
-        public CsdVector3 Scale;
-        public CsdVector3 Size;
-        public CsdVector3 Pivot;
-        public CsdVector3 Anchor;
-        public CsdFile Image;
-        public CsdFile Prefab;
-        public CsdColor Color;
-        public CsdColorGradient BackgroundColor;
-        public List<CsdNode> Children;
-        public CsdNode(XmlElement e, CsdNode parent = null)
+
+        public string Name;                                     // 名字
+        public string Tag;                                      // 唯一标签
+        public string ActionTag;                                // 动画标签
+        public bool isActive;                                   // 是否显示 / 激活
+        public bool isInteractive;                              // 是否可交互
+        public CsdVector3 Position;                             // 位置
+        public CsdVector3 Rotation;                             // 旋转
+        public CsdVector3 Scale;                                // 缩放
+        public CsdVector3 Size;                                 // 大小
+        public CsdVector3 Pivot;                                // 中心点位置
+        public CsdVector3 Anchor;                               // 锚点位置
+        public CsdFileLink Image;                               // 链接图片
+        public CsdFileLink Prefab;                              // 链接其他节点
+        public CsdColor Color;                                  // 主要颜色
+        public CsdColorGradient BackgroundColor;                // 背景颜色（渐变）
+        public List<CsdNode> Children;                          // 子节点列表
+        public CsdNode Parse(XmlElement e)
         {
             Name = GetStringAttribute(e, "Name");
-            ActionTag = GetAttribute(e, "ActionTag") != null ? (GetIntegerAttribute(e, "ActionTag", 0)) : (int?)null;
+            Tag = GetStringAttribute(e, "Tag");
+            ActionTag = GetStringAttribute(e, "ActionTag", null);
             isActive = GetBoolAttribute(e, "VisibleForFrame", true);
             isInteractive = GetBoolAttribute(e, "TouchEnable", false);
-            Position = new CsdVector3(GetElement(e, "Position"));
+            Position = new CsdVector3().Parse(GetElement(e, "Position"));
             Rotation = GenRotation(e);
-            Scale = CsdVector3.FromScale(GetElement(e, "Scale"), 1f);
-            Size = new CsdVector3(GetElement(e, "Size"));
-            Pivot = CsdVector3.FromScale(GetElement(e, "AnchorPoint"), 0f);
-            Anchor = GenAnchors(e, parent);
-            if (GetElement(e, "FileData") != null)
+            Scale = new CsdVector3().ParseFromScale(GetElement(e, "Scale"), 1f);
+            Size = new CsdVector3().Parse(GetElement(e, "Size"));
+            Pivot = new CsdVector3().ParseFromScale(GetElement(e, "AnchorPoint"), 0f);
+            Anchor = GenAnchors(e);
+            var FileDataElement = GetElement(e, "FileData");
+            if (FileDataElement != null)
             {
-                var tar = new CsdFile(GetElement(e, "FileData"));
-                switch (tar.Type)
+                var FileData = new CsdFileLink().Parse(FileDataElement);
+                switch (FileData.Type)
                 {
                     case "Normal":
-                        Prefab = tar;
+                        Prefab = FileData;
                         break;
                     case "MarkedSubImage":
-                        Image = tar;
+                        Image = FileData;
                         break;
                     default:
                         throw new Exception();
                 }
             }
-            if (GetElement(e, "CColor") != null)
+            var ColorElement = GetElement(e, "CColor");
+            if (ColorElement != null)
             {
-                Color = new CsdColor(GetElement(e, "CColor"));
-                var Alpha = GetIntegerAttribute(e, "Alpha", 255) / 255f;
-                Color.A = Alpha;
+                Color = new CsdColor().Parse(ColorElement, GetIntegerAttribute(e, "Alpha", 255) / 255f);
             }
-            BackgroundColor = GenBackgroundColor(e);
+            var BackgroundColorMode = GetIntegerAttribute(e, "ComboBoxIndex", 0);
+            if (BackgroundColorMode != 0)
+            {
+                BackgroundColor = new CsdColorGradient().Parse(e, GetIntegerAttribute(e, "BackColorAlpha", 255) / 255f);
+            }
 
-
-            if (GetElement(e, "Children") != null)
+            var ChildrenElement = GetElement(e, "Children");
+            if (ChildrenElement != null)
             {
                 Children = new List<CsdNode>();
-                foreach (XmlElement child in GetElement(e, "Children"))
+                foreach (XmlElement child in ChildrenElement)
                 {
-                    Children.Add(new CsdNode(child, this));
+                    Children.Add(new CsdNode().Parse(child));
                 }
             }
+            return this;
         }
 
-        private static CsdColorGradient GenBackgroundColor(XmlElement e)
+        private static CsdVector3 GenAnchors(XmlElement e)
         {
-            CsdColorGradient backgroundColor = null;
-            var BackgroundType = GetIntegerAttribute(e, "ComboBoxIndex", 0);
-            var Alpha = GetIntegerAttribute(e, "BackColorAlpha", 255) / 255f;
-            var color = new CsdColor(GetElement(e, "SingleColor"));
-            color.A = Alpha;
-            var color1 = new CsdColor(GetElement(e, "FirstColor"));
-            color1.A = Alpha;
-            var color2 = new CsdColor(GetElement(e, "EndColor"));
-            color2.A = Alpha;
-            var dir = CsdVector3.FromScale(GetElement(e, "ColorVector"));
-            var dir_ignored = GetFloatAttribute(e, "ColorAngle", 90f);  //same mean as ColorVector, but in degrees
-            switch (BackgroundType)
-            {
-                case 0: // None
-                    // backgroundColor = CsdColorGradient.NewNone();
-                    break;
-                case 1: // Color
-                    backgroundColor = CsdColorGradient.NewColor(color);
-                    break;
-                case 2: // Gradient
-                    backgroundColor = CsdColorGradient.NewGradient(color1, color2, dir);
-                    break;
-            }
-            return backgroundColor;
-        }
-
-        private static CsdVector3 GenAnchors(XmlElement e, CsdNode parent)
-        {
-            var Anchor = CsdVector3.FromScale(null);
+            var Anchor = new CsdVector3();
             var HorizontalEdge = GetStringAttribute(e, "HorizontalEdge", "LeftEdge");
             var VerticalEdge = GetStringAttribute(e, "VerticalEdge", "BottomEdge");
             var LeftMargin = GetFloatAttribute(e, "LeftMargin", 0f);
             var RightMargin = GetFloatAttribute(e, "RightMargin", 0f);
             var TopMargin = GetFloatAttribute(e, "TopMargin", 0f);
             var BottomMargin = GetFloatAttribute(e, "BottomMargin", 0f);
-            var parentSize = parent?.Size ?? new CsdVector3(null);
-            var Pivot = CsdVector3.FromScale(GetElement(e, "AnchorPoint"), 0f);
-            var Size = new CsdVector3(GetElement(e, "Size"));
+            var Size = new CsdVector3().Parse(GetElement(e, "Size"));
+            var Pivot = new CsdVector3().ParseFromScale(GetElement(e, "AnchorPoint"), 0f);
             switch (HorizontalEdge)
             {
                 case "LeftEdge":
@@ -373,7 +388,6 @@ namespace Cocos2Unity
                     break;
                 case "BothEdge":
                     Anchor.Y = (Size.Y * Pivot.Y + BottomMargin) / (Size.Y + BottomMargin + TopMargin);
-                    // TODO
                     break;
             }
             return Anchor;
@@ -381,96 +395,101 @@ namespace Cocos2Unity
 
         private static CsdVector3 GenRotation(XmlElement e)
         {
-            var Rotation = new CsdVector3(null);
-            var RotationZ = -GetFloatAttribute(e, "Rotation", 0f);
-            var RotationSkewX = -GetFloatAttribute(e, "RotationSkewX", 0f);  // TODO
-            var RotationSkewY = -GetFloatAttribute(e, "RotationSkewY", 0f);  // TODO
-            Rotation.Z = RotationZ;
+            var Rotation = new CsdVector3();
+            var RotationZ = GetFloatAttribute(e, "Rotation", 0f);
+            var RotationSkewX = GetFloatAttribute(e, "RotationSkewX", 0f);  // TODO
+            var RotationSkewY = GetFloatAttribute(e, "RotationSkewY", 0f);  // TODO
+            // Rotation.Z = -RotationZ;
+            Rotation.X = RotationSkewX;
+            Rotation.Y = RotationSkewY;
             return Rotation;
         }
+
     }
 
-    public class CsdTimeline : ParseMeta
+    public class CsdTimeline : CsdType, ICsdParse<CsdTimeline>
     {
-        public CsdTimeline(XmlElement e)
-        {
+        public string ActionTag;                                // 动画标签
+        public List<CsdFrame<CsdBool>> isActive;                // 是否显示 / 激活
+        public List<CsdFrame<CsdVector3>> Position;             // 位置
+        public List<CsdFrame<CsdVector3>> Rotation;             // 旋转
+        public List<CsdFrame<CsdVector3>> Scale;                // 缩放
+        public List<CsdFrame<CsdVector3>> Pivot;                // 中心点位置
+        public List<CsdFrame<CsdFileLink>> Image;               // 链接图片
 
+        public CsdTimeline Parse(XmlElement e)
+        {
+            return Parse(e, 1 / 60f);
         }
 
-        public static void ParseList(XmlElement e)
+        public CsdTimeline Parse(XmlElement e, float FrameScale)
         {
-            var Duration = GetIntegerAttribute(e, "Duration");
-            var Speed = GetIntegerAttribute(e, "Speed");
-            var ActivedAnimationName = GetStringAttribute(e, "ActivedAnimationName");
-            var FrameScale = 1f / (Speed * 60);
-            foreach(XmlElement timeline in e)
+            ActionTag = GetStringAttribute(e, "ActionTag");
+            var Property = GetStringAttribute(e, "Property");
+            switch (Property)
             {
-                var ID = GetIntegerAttribute(timeline, "ActionTag");
-                var Property = GetStringAttribute(timeline, "Property");
-                ArrayList Frames = new ArrayList();
-                foreach(XmlElement frame in timeline)
-                {
-                    var FrameIndex = GetIntegerAttribute(frame, "FrameIndex");
-                    var FrameTime = FrameIndex * FrameScale;
-                    object Frame = null;
-                    switch (Property)
-                    {
-                        case "Position":
-                            CsdVector3 Value = new CsdVector3(frame);
-                            Frame = new CsdFrame<CsdVector3>(FrameTime, Value);
-                            break;
-                        case "Other":
-                            break;
-                        default:
-                            break;
-                    }
-                    if (Frame != null)
-                    {
-                        Frames.Add(Frame);
-                    }
-                }
+                case "Position":
+                    Position = ParseFrameList<CsdVector3>(e, FrameScale);
+                    break;
+                case "Scale":
+                    Scale = ParseFrameList<CsdVector3>(e, FrameScale);
+                    break;
+                case "AnchorPoint":
+                    Pivot = ParseFrameList<CsdVector3>(e, FrameScale);
+                    break;
+                case "VisibleForFrame":
+                    isActive = ParseFrameList<CsdBool>(e, FrameScale);
+                    break;
+                case "RotationSkew":
+                    Rotation = ParseFrameList<CsdVector3>(e, FrameScale);
+                    break;
+                case "FileData":
+                    Image = ParseFrameList<CsdFileLink>(e, FrameScale);
+                    break;
+                default:
+                    Console.WriteLine($"{Position} in Animation not parsed");
+                    break;
             }
+            return this;
         }
 
-        public static List<CsdFrame<T>> ParseFrameList<T>(XmlElement timeline, float FrameScale = 1) where T:ICsdFrame<T>,new()
+        private static List<CsdFrame<T>> ParseFrameList<T>(XmlElement timeline, float FrameScale = 1 / 60f) where T : ICsdParse<T>, new()
         {
             List<CsdFrame<T>> Frames = new List<CsdFrame<T>>();
             foreach (XmlElement frame in timeline)
             {
-                new T().GetFrame()
-                var FrameIndex = GetIntegerAttribute(frame, "FrameIndex");
-                var FrameTime = FrameIndex * FrameScale;
-                CsdFrame<T> Frame = null;
-
-                switch (Property)
-                {
-                    case "Position":
-                        CsdVector3 Value = new CsdVector3(frame);
-                        Frame = new CsdFrame<CsdVector3>(FrameTime, Value);
-                        break;
-                    case "Other":
-                        break;
-                    default:
-                        break;
-                }
-                if (Frame != null)
-                {
-                    Frames.Add(Frame);
-                }
+                var Frame = new CsdFrame<T>().Parse(frame);
+                Frame.FrameScale = FrameScale;
+                Frames.Add(Frame);
             }
+            return Frames;
         }
 
-        // private static Dictionary<int, CsdNode> GenNodeMap(CsdNode root, ref)
-        // {
-
-        // }
+        public static Dictionary<string, CsdTimeline> ParseAll(XmlElement e)
+        {
+            var map = new Dictionary<string, CsdTimeline>();
+            var Duration = GetIntegerAttribute(e, "Duration");
+            var Speed = GetFloatAttribute(e, "Speed");
+            var ActivedAnimationName = GetStringAttribute(e, "ActivedAnimationName");
+            var FrameScale = 1f / (Speed * 60);
+            foreach (XmlElement timeline in e)
+            {
+                var ActionTag = GetStringAttribute(timeline, "ActionTag");
+                if (!map.TryGetValue(ActionTag, out var Timeline))
+                {
+                    Timeline = new CsdTimeline();
+                }
+                Timeline.Parse(timeline, FrameScale);
+            }
+            return map;
+        }
     }
     public class CsdParser
     {
         public String Version;
         public String Name;
         public CsdNode Node;
-        public CsdTimeline Timeline;
+        public Dictionary<string, CsdTimeline> Timelines;
         public CsdParser(XmlDocument doc)
         {
             var root = doc["GameProjectFile"];
@@ -482,11 +501,9 @@ namespace Cocos2Unity
             var content = root["Content"]?["Content"];
             if (content["ObjectData"] != null)
             {
-                Node = new CsdNode(content["ObjectData"]);
-
-                Timeline = new CsdTimeline(content["Animation"]);
+                Node = new CsdNode().Parse(content["ObjectData"]);
+                Timelines = CsdTimeline.ParseAll(content["Animation"]);
             }
         }
-
     }
 }

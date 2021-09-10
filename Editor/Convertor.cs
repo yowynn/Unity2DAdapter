@@ -24,8 +24,8 @@ namespace Cocos2Unity
         public string OutFolder;
         private CsdParser parser;
 
-        protected abstract GameObject ObjectConvert(CsdNode node, GameObject parent = null);
-        protected abstract AnimationClip AnimConvert(GameObject node);
+        protected abstract GameObject CreateGameObject(CsdNode node, GameObject parent = null);
+        protected abstract void BindAnimationCurve(AnimationClip clip, GameObject go, string relativePath, CsdTimeline timeline);
         public void SetRootPath(string projectPath, string[] resPath)
         {
             if (Directory.Exists(projectPath))
@@ -97,16 +97,73 @@ namespace Cocos2Unity
             var fullpath = TryGetFullResPath(csdpath);
             var xml = XML.OpenXml(fullpath);
             parser = new CsdParser(xml);
-            var root = ObjectConvert(parser.Node);
+
+            Dictionary<string, GameObject> map = new Dictionary<string, GameObject>();
+            var root = ConvertNode(parser.Node, ref map, null);
+            var clip = ConvertTimelines(parser.Timelines, root, ref map);
+
             var s = UnityEditor.SceneManagement.StageUtility.GetCurrentStageHandle().FindComponentsOfType<Canvas>()[0];
             root.transform.SetParent(s.transform, false);
 
-            var clip = AnimConvert(root);
             var clipPath = TryGetOutPath(csdpath, ".anim");
             AssetDatabase.CreateAsset(clip, clipPath);
 
             var prefabPath = TryGetOutPath(csdpath, ".prefab");
             PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+        }
+
+        private GameObject ConvertNode(CsdNode node, ref Dictionary<string, GameObject> map, GameObject parent)
+        {
+            GameObject root = null;
+            if (node != null)
+            {
+                var Children = node.Children;
+                node.Children = null;
+                root = CreateGameObject(node, parent);
+                node.Children = Children;
+                if (Children != null)
+                {
+                    foreach (var child in Children)
+                    {
+                        ConvertNode(child, ref map, root);
+                    }
+                }
+            }
+            return root;
+        }
+
+        private AnimationClip ConvertTimelines(Dictionary<string, CsdTimeline> timelines, GameObject root, ref Dictionary<string, GameObject> map)
+        {
+            AnimationClip clip = null;
+            if (timelines != null)
+            {
+                clip = new AnimationClip();
+                foreach (var pair in timelines)
+                {
+                    string ActionTag = pair.Key;
+                    CsdTimeline Timeline = pair.Value;
+                    if (map.TryGetValue(ActionTag, out var go))
+                    {
+                        var path = GetGameObjectPath(go, root);
+                        BindAnimationCurve(clip, go, path, Timeline);
+                    }
+                }
+            }
+            return clip;
+        }
+
+        private string GetGameObjectPath(GameObject go, GameObject root)
+        {
+            string path = "";
+            if (go != root)
+            {
+                var parent = go.transform.parent.gameObject;
+                if (parent == root)
+                    path = go.name;
+                else
+                    path = GetGameObjectPath(parent, root) + "/" + go.name;
+            }
+            return path;
         }
 
         public bool IsConverted(string respath)
@@ -364,13 +421,13 @@ namespace Cocos2Unity
             return convertedSprite;
         }
 
-        protected ConvertedSprite GetSprite(CsdFile imageData)
+        protected ConvertedSprite GetSprite(CsdFileLink imageData)
         {
             var convertedSprite = ImportPlist(imageData.Plist)?[imageData.Path] ?? ImportSprite(imageData.Path);
             return convertedSprite;
         }
 
-        protected GameObject CreateFromPrefab(CsdFile prefabData)
+        protected GameObject CreateFromPrefab(CsdFileLink prefabData)
         {
             GameObject go = null;
             if (prefabData == null)
@@ -511,7 +568,7 @@ namespace Cocos2Unity
                         }
                     }
                 });
-                Cocos2Unity.ParseMeta.SwapAccessLog(convertor.OutFolder + "unhandled.xml");
+                Cocos2Unity.CsdType.SwapAccessLog(convertor.OutFolder + "unhandled.xml");
             }
         }
 
