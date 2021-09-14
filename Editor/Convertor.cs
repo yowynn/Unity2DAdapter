@@ -101,9 +101,18 @@ namespace Cocos2Unity
             Dictionary<string, GameObject> map = new Dictionary<string, GameObject>();
             var root = ConvertNode(parser.Node, ref map, null);
             var clip = ConvertTimelines(parser.Timelines, root, ref map);
+            var controller = ConvertAnimationList(null, root, clip);
+            // var anim = root.AddComponent<Animator>();
+            // anim.runtimeAnimatorController = Resources.Load
+            // anim.AddClip(clip, "hah");
 
             var s = UnityEditor.SceneManagement.StageUtility.GetCurrentStageHandle().FindComponentsOfType<Canvas>()[0];
             root.transform.SetParent(s.transform, false);
+
+
+
+            var controllerPath = TryGetOutPath(csdpath, ".controller");
+            AssetDatabase.CreateAsset(controller, controllerPath);
 
             var clipPath = TryGetOutPath(csdpath, ".anim");
             AssetDatabase.CreateAsset(clip, clipPath);
@@ -114,22 +123,25 @@ namespace Cocos2Unity
 
         private GameObject ConvertNode(CsdNode node, ref Dictionary<string, GameObject> map, GameObject parent)
         {
-            GameObject root = null;
+            GameObject go = null;
             if (node != null)
             {
                 var Children = node.Children;
                 node.Children = null;
-                root = CreateGameObject(node, parent);
+                go = CreateGameObject(node, parent);
                 node.Children = Children;
+                string ActionTag = node.ActionTag;
+                if (ActionTag != null && ActionTag != "")
+                    map.Add(ActionTag, go);
                 if (Children != null)
                 {
                     foreach (var child in Children)
                     {
-                        ConvertNode(child, ref map, root);
+                        ConvertNode(child, ref map, go);
                     }
                 }
             }
-            return root;
+            return go;
         }
 
         private AnimationClip ConvertTimelines(Dictionary<string, CsdTimeline> timelines, GameObject root, ref Dictionary<string, GameObject> map)
@@ -150,6 +162,24 @@ namespace Cocos2Unity
                 }
             }
             return clip;
+        }
+
+        private UnityEditor.Animations.AnimatorController ConvertAnimationList(object animationList, GameObject root, AnimationClip clip)
+        {
+            if (!root.TryGetComponent<Animator>(out var animator))
+            {
+                animator = root.AddComponent<Animator>();
+            }
+            var ac = new UnityEditor.Animations.AnimatorController();
+            ac.AddLayer("Base Layer");
+            var stateMachine = ac.layers[0].stateMachine;
+            var state = stateMachine.AddState("Test");
+            // UnityEngine.Animations.AnimationClipPlayable p = UnityEngine.Animations.AnimationClipPlayable.Create(clip);
+            state.motion = clip;
+            UnityEditor.Animations.AnimatorController.SetAnimatorController(animator, ac);
+            return ac;
+            // UnityEditor.Animations.AnimatorController.CreateAnimatorControllerAtPath("Assets/Mecanim/StateMachineTransitions.controller");
+            // UnityEditor.Animations.AnimatorController.c
         }
 
         private string GetGameObjectPath(GameObject go, GameObject root)
@@ -568,7 +598,7 @@ namespace Cocos2Unity
                         }
                     }
                 });
-                Cocos2Unity.CsdType.SwapAccessLog(convertor.OutFolder + "unhandled.xml");
+                Cocos2Unity.CsdType.SwapAccessLog(convertor.OutFolder + project.projectName + "_unhandled.xml");
             }
         }
 

@@ -1,0 +1,59 @@
+## CSD 属性列表
+
+- GameProjectFile (`DEMO.csd`)
+    - [ ]  Animation — AnimationClip (`DEMO.anim`)
+        - [ ]  *Timeline
+            - [x]  `[A]` ActionTag — to link the game object
+            - [x]  `[A]` Property
+                - [x]  `="Position"` — link `RectTransform->m_AnchoredPosition`
+                - [x]  `="Scale"` — link `RectTransform->m_LocalScale`
+                - [x]  `="AnchorPoint"` — link `RectTransform->m_Pivot`
+                - [x]  `="VisibleForFrame"` — link `GameObject->m_IsActive`
+                - [ ]  `="RotationSkew"` —  link `RectTransform->m_LocalRotation`
+                - [x]  `="FileData"` — link `Image->m_Sprite`
+            - [x]  XXXFrame
+                - [x]  `[A]` FrameIndex — Frame Index
+                - [x]  `[A]` Tween — Constant Easing Type
+                - [x]  EasingData
+                    - [x]  `[A]` Type
+                        - [ ]  `="-1"` — Custom Easing Type
+                            - [ ]  Points
+                                - [ ]  *PointF
+                        - [x]  `="0"` — Linear Easing Type
+    - [ ]  AnimationList —
+    - [x]  ObjectData — GameObject (`DEMO.prefab`)
+        - [x]  `[A]` Name — `gameObject.name`
+        - [ ]  `[A]` ~~Tag~~ — ignored, unique key
+        - [x]  `[A]` ActionTag — to link the timeline
+        - [x]  `[A]` VisibleForFrame — `gameObject.activeSelf`
+        - [x]  `[A]` TouchEnable — `gameObject.Image.raycastTarget`
+        - [ ]  `[A]` ~~Rotation~~ — ignored, same as "*RotationSkewX"*
+        - [ ]  `[A]` RotationSkewX
+        - [ ]  `[A]` RotationSkewY
+        - [x]  `[A]` HorizontalEdge — `gameObject.RectTransform.anchorMin/anchorMax`
+        - [x]  `[A]` VerticalEdge — `gameObject.RectTransform.anchorMin/anchorMax`
+        - [x]  `[A]` LeftMargin — `gameObject.RectTransform.anchorMin/anchorMax`
+        - [x]  `[A]` RightMargin — `gameObject.RectTransform.anchorMin/anchorMax`
+        - [x]  `[A]` TopMargin — `gameObject.RectTransform.anchorMin/anchorMax`
+        - [x]  `[A]` BottomMargin — `gameObject.RectTransform.anchorMin/anchorMax`
+        - [ ]  `[A]` Alpha
+        - [ ]  CColor
+        - [x]  Size — `gameObject.RectTransform.sizeDelta`
+        - [x]  AnchorPoint — `gameObject.RectTransform.pivot`
+        - [x]  Position — `gameObject.RectTransform.anchoredPosition`
+        - [x]  Scale — `gameObject.RectTransform.localScale`
+        - [x]  `[A]` ctype — type of the node
+            - [x]  `="GameNodeObjectData"` — the root node
+            - [x]  `="PanelObjectData"` — the empty (just background colors) node
+                - [ ]  `[A]` ComboBoxIndex
+                - [ ]  `[A]` BackColorAlpha
+                - [ ]  `[A]` ~~ColorAngle~~ — ignored, same as "ColorVector*"*
+                - [ ]  SingleColor
+                - [ ]  FirstColor
+                - [ ]  EndColor
+                - [ ]  ColorVector
+            - [x]  `="SpriteObjectData"` — the image node
+                - [x]  FileData(`Type="MarkedSubImage"`) — `gameObject.Image.sprite`
+            - [x]  `="ProjectNodeObjectData"` — the linked node
+                - [x]  FileData(`Type="Normal"`) — GameObject linked to another ".prefab"
+        - [x]  Children — Child GameObject s
