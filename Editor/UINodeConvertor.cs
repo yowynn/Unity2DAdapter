@@ -171,6 +171,11 @@ namespace Cocos2Unity
                 AnimationUtility.SetObjectReferenceCurve(clip, GetBinding<Image>("m_Sprite"), getObjectCurve(timeline.Image, val => GetSprite(val).sprite));
                 // TODO what if the sprite is rotated?
             }
+            if (timeline.Color_Alpha != null)
+            {
+                if (go.TryGetComponent<Image>(out var _))
+                    AnimationUtility.SetEditorCurve(clip, GetBinding<Image>("m_Color.a"), getFloatCurve(timeline.Color_Alpha, val => val));
+            }
 
         }
         public static AnimationCurve getFloatCurve<T>(List<CsdFrame<T>> frameList, Func<T, float> getFrameValue) where T : ICsdParse<T>, new()
@@ -189,13 +194,31 @@ namespace Cocos2Unity
                 AnimationUtility.SetKeyBroken(ac, i, true);
                 switch (frame.Type)
                 {
-                    case CsdFrame<T>.EasingType.Constant:
+                    case CsdCurveType.Constant:
                         AnimationUtility.SetKeyRightTangentMode(ac, i, AnimationUtility.TangentMode.Constant);
                         if (i + 1 < frameList.Count) AnimationUtility.SetKeyLeftTangentMode(ac, i + 1, AnimationUtility.TangentMode.Constant);
                         break;
-                    case CsdFrame<T>.EasingType.Costum:
+                    case CsdCurveType.Costum:                   // TODO
+                        AnimationUtility.SetKeyRightTangentMode(ac, i, AnimationUtility.TangentMode.Linear);
+                        if (i + 1 < frameList.Count) AnimationUtility.SetKeyLeftTangentMode(ac, i + 1, AnimationUtility.TangentMode.Linear);
                         break;
-                    case CsdFrame<T>.EasingType.Linear:
+                    case CsdCurveType.Linear:
+                        AnimationUtility.SetKeyRightTangentMode(ac, i, AnimationUtility.TangentMode.Linear);
+                        if (i + 1 < frameList.Count) AnimationUtility.SetKeyLeftTangentMode(ac, i + 1, AnimationUtility.TangentMode.Linear);
+                        break;
+                    case CsdCurveType.Sine_EaseIn:              // TODO similar curve
+                    case CsdCurveType.Quad_EaseIn:              // TODO similar curve
+                    case CsdCurveType.Cubic_EaseIn:             // TODO similar curve
+                        AnimationUtility.SetKeyRightTangentMode(ac, i, AnimationUtility.TangentMode.Auto);
+                        if (i + 1 < frameList.Count) AnimationUtility.SetKeyLeftTangentMode(ac, i + 1, AnimationUtility.TangentMode.Linear);
+                        break;
+                    case CsdCurveType.Sine_EaseOut:              // TODO similar curve
+                    case CsdCurveType.Quad_EaseOut:              // TODO similar curve
+                    case CsdCurveType.Cubic_EaseOut:             // TODO similar curve
+                        AnimationUtility.SetKeyRightTangentMode(ac, i, AnimationUtility.TangentMode.Linear);
+                        if (i + 1 < frameList.Count) AnimationUtility.SetKeyLeftTangentMode(ac, i + 1, AnimationUtility.TangentMode.Auto);
+                        break;
+                    default:
                         AnimationUtility.SetKeyRightTangentMode(ac, i, AnimationUtility.TangentMode.Linear);
                         if (i + 1 < frameList.Count) AnimationUtility.SetKeyLeftTangentMode(ac, i + 1, AnimationUtility.TangentMode.Linear);
                         break;

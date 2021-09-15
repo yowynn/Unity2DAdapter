@@ -102,14 +102,15 @@ namespace Cocos2Unity
 
                 Dictionary<string, GameObject> map = new Dictionary<string, GameObject>();
                 var root = ConvertNode(parser.Node, ref map, null);
+                root.name = parser.Name;
                 var clip = ConvertTimelines(parser.Timelines, root, ref map);
-
-                var controller = ConvertAnimationList(parser.Animations, root, clip, out var clips);
+                var controller = ConvertAnimationList(parser.Animations, root, clip, out var clips, parser.DefaultAnimation);
                 foreach (var pair in clips)
                 {
                     var path = TryGetOutPath(csdpath, ".anim");
+                    var tarclip = pair.Value;
                     path = path.Substring(0, path.Length - 5) + "_" + pair.Key + ".anim";
-                    AssetDatabase.CreateAsset(pair.Value, path);
+                    AssetDatabase.CreateAsset(tarclip, path);
                 }
 
                 // var controller = DebugLinkWholeClip(root, clip);
@@ -118,7 +119,6 @@ namespace Cocos2Unity
                 var controllerPath = TryGetOutPath(csdpath, ".controller");
                 AssetDatabase.CreateAsset(controller, controllerPath);
 
-                root.name = parser.Name;
                 var prefabPath = TryGetOutPath(csdpath, ".prefab");
                 // PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
                 PrefabUtility.SaveAsPrefabAssetAndConnect(root, prefabPath, InteractionMode.AutomatedAction);
@@ -184,7 +184,7 @@ namespace Cocos2Unity
             return clip;
         }
 
-        private UnityEditor.Animations.AnimatorController ConvertAnimationList(Dictionary<string, CsdAnimInfo> animations, GameObject root, AnimationClip clip, out Dictionary<string, AnimationClip> clips)
+        private UnityEditor.Animations.AnimatorController ConvertAnimationList(Dictionary<string, CsdAnimInfo> animations, GameObject root, AnimationClip clip, out Dictionary<string, AnimationClip> clips, string defaultStateName = "")
         {
             clips = new Dictionary<string, AnimationClip>();
             if (!root.TryGetComponent<Animator>(out var animator))
@@ -200,8 +200,17 @@ namespace Cocos2Unity
                 var state = stateMachine.AddState(Name);
                 Debug.Log($"animation {Name}");
                 var tarclip = CutAnimationClip(clip, pair.Value);
+                SetAnimationClipLoop(tarclip, true);            // debug
+                tarclip.wrapMode = WrapMode.Loop;
                 clips.Add(Name, tarclip);
                 state.motion = tarclip;
+                if (defaultStateName == Name)
+                {
+                    stateMachine.defaultState = state;
+                }
+                ac.AddParameter(Name, AnimatorControllerParameterType.Trigger);
+                var trans = stateMachine.AddAnyStateTransition(state);
+                trans.AddCondition(UnityEditor.Animations.AnimatorConditionMode.If, 1f, Name);
             }
             UnityEditor.Animations.AnimatorController.SetAnimatorController(animator, ac);
             return ac;
@@ -300,6 +309,14 @@ namespace Cocos2Unity
                 UnityEditor.AnimationUtility.SetObjectReferenceCurve(newclip, binding, newkeys.ToArray());
             }
             return newclip;
+        }
+
+        private void SetAnimationClipLoop(AnimationClip clip, bool isLoop)
+        {
+            clip.wrapMode = isLoop ? WrapMode.Loop : WrapMode.Once;
+            var settings = AnimationUtility.GetAnimationClipSettings(clip);
+            settings.loopTime = isLoop;
+            AnimationUtility.SetAnimationClipSettings(clip, settings);
         }
 
         private string GetGameObjectPath(GameObject go, GameObject root)

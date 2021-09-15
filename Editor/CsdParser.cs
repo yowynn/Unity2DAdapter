@@ -191,7 +191,67 @@ namespace Cocos2Unity
         {
             return t.Value;
         }
+        public static implicit operator CsdBool(bool t)
+        {
+            return new CsdBool { Value = t };
+        }
     }
+
+    public class CsdInteger : CsdType, ICsdParse<CsdInteger>
+    {
+        public int Value;
+        public CsdInteger Parse(XmlElement e)
+        {
+            Value = GetIntegerAttribute(e, "Value");
+            return this;
+        }
+        public static implicit operator int(CsdInteger t)
+        {
+            return t.Value;
+        }
+        public static implicit operator CsdInteger(int t)
+        {
+            return new CsdInteger { Value = t };
+        }
+    }
+
+    public class CsdFloat : CsdType, ICsdParse<CsdFloat>
+    {
+        public float Value;
+        public CsdFloat Parse(XmlElement e)
+        {
+            Value = GetFloatAttribute(e, "Value");
+            return this;
+        }
+        public static implicit operator float(CsdFloat t)
+        {
+            return t.Value;
+        }
+        public static implicit operator CsdFloat(float t)
+        {
+            return new CsdFloat { Value = t };
+        }
+    }
+
+    public class CsdString : CsdType, ICsdParse<CsdString>
+    {
+        public string Value;
+        public CsdString Parse(XmlElement e)
+        {
+            Value = GetStringAttribute(e, "Value");
+            return this;
+        }
+        public static implicit operator string(CsdString t)
+        {
+            return t.Value;
+        }
+        public static implicit operator CsdString(string t)
+        {
+            return new CsdString { Value = t };
+        }
+
+    }
+
 
     public class CsdVector3 : CsdType, ICsdParse<CsdVector3>
     {
@@ -290,18 +350,24 @@ namespace Cocos2Unity
         }
     }
 
+    public enum CsdCurveType
+    {
+        Constant = -2,
+        Costum = -1,                                            // TODO
+        Linear = 0,
+        Sine_EaseIn = 1,                                        // TODO
+        Sine_EaseOut = 2,                                       // TODO
+        Quad_EaseIn = 4,                                        // TODO
+        Quad_EaseOut = 5,                                       // TODO
+        Cubic_EaseIn = 7,                                       // TODO
+        Cubic_EaseOut = 8,                                      // TODO
+    }
     public class CsdFrame<T> : CsdType, ICsdParse<CsdFrame<T>> where T : ICsdParse<T>, new()
     {
-        public enum EasingType
-        {
-            Constant = -2,
-            Costum = -1,
-            Linear = 0,
-        }
         public int FrameIndex;
         public float FrameScale;
         public T Value;
-        public EasingType Type = EasingType.Linear;
+        public CsdCurveType Type = CsdCurveType.Linear;
         public float Time => FrameIndex * FrameScale;
 
         public CsdFrame<T> Parse(XmlElement e)
@@ -316,13 +382,13 @@ namespace Cocos2Unity
             FrameScale = frameScale;
             if (!GetBoolAttribute(e, "Tween", true))
             {
-                Type = EasingType.Constant;
+                Type = CsdCurveType.Constant;
             }
             else if (GetElement(e, "EasingData") != null)
             {
                 var val = GetIntegerAttribute(GetElement(e, "EasingData"), "Type", 0);
-                if (Enum.IsDefined(typeof(EasingType), val))
-                    Type = (EasingType)val;
+                if (Enum.IsDefined(typeof(CsdCurveType), val))
+                    Type = (CsdCurveType)val;
                 else
                     LogNonAccessKey("Frame.EasingData.Type", "Type_" + val.ToString());
             }
@@ -460,6 +526,7 @@ namespace Cocos2Unity
         public List<CsdFrame<CsdVector3>> Scale;                // 缩放
         public List<CsdFrame<CsdVector3>> Pivot;                // 中心点位置
         public List<CsdFrame<CsdFileLink>> Image;               // 链接图片
+        public List<CsdFrame<CsdFloat>> Color_Alpha;            // 链接颜色（仅 Alpha）
 
         public CsdTimeline Parse(XmlElement e)
         {
@@ -489,6 +556,10 @@ namespace Cocos2Unity
                     break;
                 case "FileData":
                     Image = ParseFrameList<CsdFileLink>(e, FrameScale);
+                    break;
+                case "Alpha":
+                    Color_Alpha = ParseFrameList<CsdFloat>(e, FrameScale);
+                    foreach (var frame in Color_Alpha) frame.Value = frame.Value / 255f;
                     break;
                 default:
                     LogNonAccessKey("Animation.Timeline.Property", Property);
