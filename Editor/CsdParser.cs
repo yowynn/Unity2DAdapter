@@ -298,11 +298,11 @@ namespace Cocos2Unity
             Costum = -1,
             Linear = 0,
         }
-        public int Key;
+        public int FrameIndex;
         public float FrameScale;
         public T Value;
-        public EasingType Type = EasingType.Constant;
-        public float Time => Key * FrameScale;
+        public EasingType Type = EasingType.Linear;
+        public float Time => FrameIndex * FrameScale;
 
         public CsdFrame<T> Parse(XmlElement e)
         {
@@ -311,7 +311,7 @@ namespace Cocos2Unity
 
         public CsdFrame<T> Parse(XmlElement e, float frameScale)
         {
-            Key = GetIntegerAttribute(e, "FrameIndex");
+            FrameIndex = GetIntegerAttribute(e, "FrameIndex");
             Value = new T().Parse(e);
             FrameScale = frameScale;
             if (!GetBoolAttribute(e, "Tween", true))
@@ -367,6 +367,9 @@ namespace Cocos2Unity
             var FillType = GetStringAttribute(e, "ctype");
             switch (FillType)
             {
+                case "GameNodeObjectData":
+                    // mark the root, nothing to do
+                    break;
                 case "PanelObjectData":
                     FillColor = new CsdColorGradient().Parse(e, GetIntegerAttribute(e, "BackColorAlpha", 255) / 255f);
                     break;
@@ -506,14 +509,10 @@ namespace Cocos2Unity
             return Frames;
         }
 
-        public static Dictionary<string, CsdTimeline> ParseAll(XmlElement e)
+        public static Dictionary<string, CsdTimeline> ParseAll(XmlElement list, float FrameScale = 1 / 60f)
         {
             var map = new Dictionary<string, CsdTimeline>();
-            var Duration = GetIntegerAttribute(e, "Duration");
-            var Speed = GetFloatAttribute(e, "Speed");
-            var ActivedAnimationName = GetStringAttribute(e, "ActivedAnimationName");
-            var FrameScale = 1f / (Speed * 60);
-            foreach (XmlElement timeline in e)
+            foreach (XmlElement timeline in list)
             {
                 var ActionTag = GetStringAttribute(timeline, "ActionTag");
                 if (!map.TryGetValue(ActionTag, out var Timeline))
@@ -526,13 +525,48 @@ namespace Cocos2Unity
             return map;
         }
     }
-    public class CsdParser
+
+    public class CsdAnimInfo : CsdType, ICsdParse<CsdAnimInfo>
     {
-        public String Version;
-        public String Name;
+        public string Name;
+        public int StartIndex;
+        public int EndIndex;
+        public float FrameScale;
+        public float StartTime => StartIndex * FrameScale;
+        public float EndTime => EndIndex * FrameScale;
+        public CsdAnimInfo Parse(XmlElement e)
+        {
+            return Parse(e, 1 / 60f);
+        }
+
+        public CsdAnimInfo Parse(XmlElement e, float frameScale)
+        {
+            Name = GetStringAttribute(e, "Name");
+            StartIndex = GetIntegerAttribute(e, "StartIndex");
+            EndIndex = GetIntegerAttribute(e, "EndIndex");
+            FrameScale = frameScale;
+            return this;
+        }
+    }
+
+    public class CsdParser : CsdType
+    {
+        public string Version;
+        public string Name;
         public CsdNode Node;
         public Dictionary<string, CsdTimeline> Timelines;
+        public Dictionary<string, CsdAnimInfo> Animations;
+        public string DefaultAnimation = "";
+
+        public CsdParser()
+        {
+
+        }
         public CsdParser(XmlDocument doc)
+        {
+            this.Parse(doc);
+        }
+        public CsdParser Parse(XmlDocument doc)
         {
             var root = doc["GameProjectFile"];
 
@@ -541,10 +575,46 @@ namespace Cocos2Unity
             Version = prop.Attributes["Version"].Value;
 
             var content = root["Content"]?["Content"];
-            if (content["ObjectData"] != null)
+            if (content != null)
             {
-                Node = new CsdNode().Parse(content["ObjectData"]);
-                Timelines = CsdTimeline.ParseAll(content["Animation"]);
+                ParseObjectData(content["ObjectData"]);
+                ParseAnimation(content["Animation"], out var FrameScale);
+                ParseAnimationList(content["AnimationList"], FrameScale);
+            }
+            return this;
+        }
+
+        private void ParseObjectData(XmlElement ObjectData)
+        {
+            if (ObjectData == null)
+            {
+                throw new Exception("no ObjectData");
+            }
+            Node = new CsdNode().Parse(ObjectData);
+        }
+        private void ParseAnimation(XmlElement Animation, out float FrameScale)
+        {
+            if (Animation == null)
+            {
+                throw new Exception("no Animation");
+            }
+            var Duration = GetIntegerAttribute(Animation, "Duration");
+            var Speed = GetFloatAttribute(Animation, "Speed");
+            FrameScale = 1f / (Speed * 60);
+
+            DefaultAnimation = GetStringAttribute(Animation, "ActivedAnimationName", "");
+            Timelines = CsdTimeline.ParseAll(Animation, FrameScale);
+        }
+        private void ParseAnimationList(XmlElement AnimationList, float FrameScale)
+        {
+            Animations = new Dictionary<string, CsdAnimInfo>();
+            if (AnimationList != null)
+            {
+                foreach (XmlElement e in AnimationList)
+                {
+                    var info = new CsdAnimInfo().Parse(e, FrameScale);
+                    Animations.Add(info.Name, info);
+                }
             }
         }
     }

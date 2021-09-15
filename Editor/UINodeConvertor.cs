@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using UnityEngine;
+using UnityEditor;
 using UnityEngine.UI;
 
 namespace Cocos2Unity
@@ -134,36 +135,40 @@ namespace Cocos2Unity
 
         protected override void BindAnimationCurve(AnimationClip clip, GameObject go, string relativePath, CsdTimeline timeline)
         {
+            EditorCurveBinding GetBinding<T>(string propertyName)
+            {
+                return new EditorCurveBinding { path = relativePath, type = typeof(T), propertyName = propertyName };
+            }
+
             if (timeline.isActive != null)
             {
-                clip.SetCurve(relativePath, typeof(GameObject), "m_IsActive", getFloatCurve(timeline.isActive, val => val.Value ? 1f : 0f));
+                AnimationUtility.SetEditorCurve(clip, GetBinding<GameObject>("m_IsActive"), getFloatCurve(timeline.isActive, val => val.Value ? 1f : 0f));
             }
             if (timeline.Position != null)
             {
-                clip.SetCurve(relativePath, typeof(RectTransform), "m_AnchoredPosition.x", getFloatCurve(timeline.Position, val => GetAnchoredPosition(go, val).x));
-                clip.SetCurve(relativePath, typeof(RectTransform), "m_AnchoredPosition.y", getFloatCurve(timeline.Position, val => GetAnchoredPosition(go, val).y));
+                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_AnchoredPosition.x"), getFloatCurve(timeline.Position, val => GetAnchoredPosition(go, val).x));
+                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_AnchoredPosition.y"), getFloatCurve(timeline.Position, val => GetAnchoredPosition(go, val).y));
             }
             if (timeline.Rotation != null)
             {
-                clip.SetCurve(relativePath, typeof(RectTransform), "m_LocalRotation.x", getFloatCurve(timeline.Rotation, val => Quaternion.Euler(0, 0, -val.X).x));
-                clip.SetCurve(relativePath, typeof(RectTransform), "m_LocalRotation.y", getFloatCurve(timeline.Rotation, val => Quaternion.Euler(0, 0, -val.X).y));
-                clip.SetCurve(relativePath, typeof(RectTransform), "m_LocalRotation.z", getFloatCurve(timeline.Rotation, val => Quaternion.Euler(0, 0, -val.X).z));
-                clip.SetCurve(relativePath, typeof(RectTransform), "m_LocalRotation.w", getFloatCurve(timeline.Rotation, val => Quaternion.Euler(0, 0, -val.X).w));
+                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.x"), getFloatCurve(timeline.Rotation, val => Quaternion.Euler(0, 0, -val.X).x));
+                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.y"), getFloatCurve(timeline.Rotation, val => Quaternion.Euler(0, 0, -val.X).y));
+                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.z"), getFloatCurve(timeline.Rotation, val => Quaternion.Euler(0, 0, -val.X).z));
+                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.w"), getFloatCurve(timeline.Rotation, val => Quaternion.Euler(0, 0, -val.X).w));
             }
             if (timeline.Scale != null)
             {
-                clip.SetCurve(relativePath, typeof(RectTransform), "m_LocalScale.x", getFloatCurve(timeline.Scale, val => val.X));
-                clip.SetCurve(relativePath, typeof(RectTransform), "m_LocalScale.y", getFloatCurve(timeline.Scale, val => val.Y));
+                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalScale.x"), getFloatCurve(timeline.Scale, val => val.X));
+                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalScale.y"), getFloatCurve(timeline.Scale, val => val.Y));
             }
             if (timeline.Pivot != null)
             {
-                clip.SetCurve(relativePath, typeof(RectTransform), "m_Pivot.x", getFloatCurve(timeline.Pivot, val => val.X));
-                clip.SetCurve(relativePath, typeof(RectTransform), "m_Pivot.y", getFloatCurve(timeline.Pivot, val => val.Y));
+                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_Pivot.x"), getFloatCurve(timeline.Pivot, val => val.X));
+                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_Pivot.y"), getFloatCurve(timeline.Pivot, val => val.Y));
             }
             if (timeline.Image != null)
             {
-                var binding = new UnityEditor.EditorCurveBinding { path = relativePath, type = typeof(Image), propertyName = "m_Sprite" };
-                UnityEditor.AnimationUtility.SetObjectReferenceCurve(clip, binding, getObjectCurve(timeline.Image, val => GetSprite(val).sprite));
+                AnimationUtility.SetObjectReferenceCurve(clip, GetBinding<Image>("m_Sprite"), getObjectCurve(timeline.Image, val => GetSprite(val).sprite));
                 // TODO what if the sprite is rotated?
             }
 
@@ -176,29 +181,36 @@ namespace Cocos2Unity
                 var time = frame.Time;
                 var value = getFrameValue(frame.Value);
                 Keyframe kf = new Keyframe(time, value);
+                ac.AddKey(kf);
+            }
+            for (int i = 0; i < frameList.Count; i++)
+            {
+                var frame = frameList[i];
+                AnimationUtility.SetKeyBroken(ac, i, true);
                 switch (frame.Type)
                 {
                     case CsdFrame<T>.EasingType.Constant:
-                        kf.inTangent = float.PositiveInfinity;
-                        kf.outTangent = float.PositiveInfinity;
+                        AnimationUtility.SetKeyRightTangentMode(ac, i, AnimationUtility.TangentMode.Constant);
+                        if (i + 1 < frameList.Count) AnimationUtility.SetKeyLeftTangentMode(ac, i + 1, AnimationUtility.TangentMode.Constant);
                         break;
                     case CsdFrame<T>.EasingType.Costum:
                         break;
                     case CsdFrame<T>.EasingType.Linear:
+                        AnimationUtility.SetKeyRightTangentMode(ac, i, AnimationUtility.TangentMode.Linear);
+                        if (i + 1 < frameList.Count) AnimationUtility.SetKeyLeftTangentMode(ac, i + 1, AnimationUtility.TangentMode.Linear);
                         break;
                 }
-                ac.AddKey(kf);
             }
             return ac;
         }
 
-        public static UnityEditor.ObjectReferenceKeyframe[] getObjectCurve<T>(List<CsdFrame<T>> frameList, Func<T, UnityEngine.Object> getFrameValue) where T : ICsdParse<T>, new()
+        public static ObjectReferenceKeyframe[] getObjectCurve<T>(List<CsdFrame<T>> frameList, Func<T, UnityEngine.Object> getFrameValue) where T : ICsdParse<T>, new()
         {
-            var ac = new UnityEditor.ObjectReferenceKeyframe[frameList.Count];
+            var ac = new ObjectReferenceKeyframe[frameList.Count];
             var index = 0;
             foreach (var frame in frameList)
             {
-                UnityEditor.ObjectReferenceKeyframe kf = new UnityEditor.ObjectReferenceKeyframe();
+                var kf = new ObjectReferenceKeyframe();
                 kf.time = frame.Time;
                 kf.value = getFrameValue(frame.Value);
                 ac[index++] = kf;

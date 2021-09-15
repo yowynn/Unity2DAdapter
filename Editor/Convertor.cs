@@ -22,7 +22,6 @@ namespace Cocos2Unity
         public List<string> ResPath;
         public string InFolder;
         public string OutFolder;
-        private CsdParser parser;
 
         protected abstract GameObject CreateGameObject(CsdNode node, GameObject parent = null);
         protected abstract void BindAnimationCurve(AnimationClip clip, GameObject go, string relativePath, CsdTimeline timeline);
@@ -93,32 +92,53 @@ namespace Cocos2Unity
 
         public void Convert(string csdpath)
         {
-            csdpath = csdpath.Replace('\\', '/');
-            var fullpath = TryGetFullResPath(csdpath);
-            var xml = XML.OpenXml(fullpath);
-            parser = new CsdParser(xml);
+            Debug.Log($"PROCESS CSDFILE {csdpath}");
+            try
+            {
+                csdpath = csdpath.Replace('\\', '/');
+                var fullpath = TryGetFullResPath(csdpath);
+                var xml = XML.OpenXml(fullpath);
+                var parser = new CsdParser(xml);
 
-            Dictionary<string, GameObject> map = new Dictionary<string, GameObject>();
-            var root = ConvertNode(parser.Node, ref map, null);
-            var clip = ConvertTimelines(parser.Timelines, root, ref map);
-            var controller = ConvertAnimationList(null, root, clip);
-            // var anim = root.AddComponent<Animator>();
-            // anim.runtimeAnimatorController = Resources.Load
-            // anim.AddClip(clip, "hah");
+                Dictionary<string, GameObject> map = new Dictionary<string, GameObject>();
+                var root = ConvertNode(parser.Node, ref map, null);
+                var clip = ConvertTimelines(parser.Timelines, root, ref map);
 
-            var s = UnityEditor.SceneManagement.StageUtility.GetCurrentStageHandle().FindComponentsOfType<Canvas>()[0];
-            root.transform.SetParent(s.transform, false);
+                var controller = ConvertAnimationList(parser.Animations, root, clip, out var clips);
+                foreach (var pair in clips)
+                {
+                    var path = TryGetOutPath(csdpath, ".anim");
+                    path = path.Substring(0, path.Length - 5) + "_" + pair.Key + ".anim";
+                    AssetDatabase.CreateAsset(pair.Value, path);
+                }
 
+                // var controller = DebugLinkWholeClip(root, clip);
+                // var clipPath = TryGetOutPath(csdpath, ".anim");
+                // AssetDatabase.CreateAsset(clip, clipPath);
+                var controllerPath = TryGetOutPath(csdpath, ".controller");
+                AssetDatabase.CreateAsset(controller, controllerPath);
 
+                root.name = parser.Name;
+                var prefabPath = TryGetOutPath(csdpath, ".prefab");
+                // PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                PrefabUtility.SaveAsPrefabAssetAndConnect(root, prefabPath, InteractionMode.AutomatedAction);
 
-            var controllerPath = TryGetOutPath(csdpath, ".controller");
-            AssetDatabase.CreateAsset(controller, controllerPath);
-
-            var clipPath = TryGetOutPath(csdpath, ".anim");
-            AssetDatabase.CreateAsset(clip, clipPath);
-
-            var prefabPath = TryGetOutPath(csdpath, ".prefab");
-            PrefabUtility.SaveAsPrefabAsset(root, prefabPath);
+                var s = UnityEditor.SceneManagement.StageUtility.GetCurrentStageHandle().FindComponentsOfType<Canvas>();
+                var canvas = (s != null && s.Length > 0) ? s[0] : null;
+                if (canvas != null)
+                {
+                    root.transform.SetParent(canvas.transform, false);
+                }
+                else
+                {
+                    GameObject.DestroyImmediate(root, false);
+                }
+            }
+            catch (Exception e)
+            {
+                Debug.Log($"PROCESS CSDFILE ERR: {e.Message}");
+            }
+            Debug.Log($"PROCESS CSDFILE END {csdpath}");
         }
 
         private GameObject ConvertNode(CsdNode node, ref Dictionary<string, GameObject> map, GameObject parent)
@@ -164,36 +184,137 @@ namespace Cocos2Unity
             return clip;
         }
 
-        private UnityEditor.Animations.AnimatorController ConvertAnimationList(object animationList, GameObject root, AnimationClip clip)
+        private UnityEditor.Animations.AnimatorController ConvertAnimationList(Dictionary<string, CsdAnimInfo> animations, GameObject root, AnimationClip clip, out Dictionary<string, AnimationClip> clips)
         {
+            clips = new Dictionary<string, AnimationClip>();
             if (!root.TryGetComponent<Animator>(out var animator))
             {
                 animator = root.AddComponent<Animator>();
             }
             var ac = new UnityEditor.Animations.AnimatorController();
-            ac.AddLayer("Base Layer");
+            if (ac.layers.Length == 0) ac.AddLayer("Base Layer");
             var stateMachine = ac.layers[0].stateMachine;
-            var state = stateMachine.AddState("Test");
-            // UnityEngine.Animations.AnimationClipPlayable p = UnityEngine.Animations.AnimationClipPlayable.Create(clip);
-            state.motion = clip;
+            foreach (var pair in animations)
+            {
+                var Name = pair.Key;
+                var state = stateMachine.AddState(Name);
+                Debug.Log($"animation {Name}");
+                var tarclip = CutAnimationClip(clip, pair.Value);
+                clips.Add(Name, tarclip);
+                state.motion = tarclip;
+            }
             UnityEditor.Animations.AnimatorController.SetAnimatorController(animator, ac);
             return ac;
-            // UnityEditor.Animations.AnimatorController.CreateAnimatorControllerAtPath("Assets/Mecanim/StateMachineTransitions.controller");
-            // UnityEditor.Animations.AnimatorController.c
+        }
+
+        private UnityEditor.Animations.AnimatorController DebugLinkWholeClip(GameObject root, AnimationClip clip)
+        {
+            if (!root.TryGetComponent<Animator>(out var animator))
+            {
+                animator = root.AddComponent<Animator>();
+            }
+            // var ac = animator.runtimeAnimatorController;
+            var ac = new UnityEditor.Animations.AnimatorController();
+            if (ac.layers.Length == 0) ac.AddLayer("Base Layer");
+            var stateMachine = ac.layers[0].stateMachine;
+            var state = stateMachine.AddState("ALL");
+            state.motion = clip;
+            UnityEditor.Animations.AnimatorController.SetAnimatorController(animator, ac);
+            Debug.Log(animator.runtimeAnimatorController);
+            return ac;
+        }
+
+        private AnimationClip CutAnimationClip(AnimationClip clip, CsdAnimInfo info)
+        {
+            var newclip = new AnimationClip();
+            var startTime = info.StartTime;
+            var endTime = info.EndTime;
+
+            var bindings = AnimationUtility.GetCurveBindings(clip);
+            foreach (var binding in bindings)
+            {
+                var curve = AnimationUtility.GetEditorCurve(clip, binding);
+                var newkeys = new List<Keyframe>();
+                bool startFrame = true, endFrame = true;
+                foreach (var key in curve.keys)
+                {
+                    if (key.time >= startTime && key.time <= endTime)
+                    {
+                        newkeys.Add(key);
+                        if (key.time == startTime) startFrame = false;
+                        if (key.time == endTime) endFrame = false;
+                    }
+                }
+                if (startFrame)
+                {
+                    var val = curve.Evaluate(startTime);
+                    newkeys.Add(new Keyframe(startTime, val));
+                }
+                if (endFrame)
+                {
+                    var val = curve.Evaluate(endTime);
+                    newkeys.Add(new Keyframe(endTime, val));
+                }
+                var newcurve = new AnimationCurve(newkeys.ToArray());
+                newclip.SetCurve(binding.path, binding.type, binding.propertyName, newcurve);
+            }
+
+            var obindings = AnimationUtility.GetObjectReferenceCurveBindings(clip);
+            foreach (var binding in obindings)
+            {
+                var keys = AnimationUtility.GetObjectReferenceCurve(clip, binding);
+                var newkeys = new List<ObjectReferenceKeyframe>();
+                bool startFrame = true, endFrame = true;
+                ObjectReferenceKeyframe startKey = default, endKey = default;
+                foreach (var key in keys)
+                {
+                    if (key.time >= startTime && key.time <= endTime)
+                    {
+                        newkeys.Add(key);
+                        if (key.time == startTime) startFrame = false;
+                        if (key.time == endTime) endFrame = false;
+                    }
+                    if (key.time < startTime && key.time >= startKey.time)
+                    {
+                        startKey = key;
+                    }
+                    if (key.time < endTime && key.time >= endKey.time)
+                    {
+                        endKey = key;
+                    }
+                }
+                if (startFrame)
+                {
+                    var newkey = new ObjectReferenceKeyframe();
+                    newkey.time = startTime;
+                    newkey.value = startKey.value;
+                    newkeys.Add(newkey);
+                }
+                if (endFrame)
+                {
+                    var newkey = new ObjectReferenceKeyframe();
+                    newkey.time = endTime;
+                    newkey.value = endKey.value;
+                    newkeys.Add(newkey);
+                }
+                UnityEditor.AnimationUtility.SetObjectReferenceCurve(newclip, binding, newkeys.ToArray());
+            }
+            return newclip;
         }
 
         private string GetGameObjectPath(GameObject go, GameObject root)
         {
-            string path = "";
-            if (go != root)
-            {
-                var parent = go.transform.parent.gameObject;
-                if (parent == root)
-                    path = go.name;
-                else
-                    path = GetGameObjectPath(parent, root) + "/" + go.name;
-            }
-            return path;
+            return AnimationUtility.CalculateTransformPath(go.transform, root.transform);
+            // string path = "";
+            // if (go != root)
+            // {
+            //     var parent = go.transform.parent.gameObject;
+            //     if (parent == root)
+            //         path = go.name;
+            //     else
+            //         path = GetGameObjectPath(parent, root) + "/" + go.name;
+            // }
+            // return path;
         }
 
         public bool IsConverted(string respath)
@@ -226,9 +347,9 @@ namespace Cocos2Unity
         private string TryGetOutPath(string respath, string changedExtension = null)
         {
             string outpath;
-            if (respath.Contains(InFolder))
+            if (respath.StartsWith(InFolder))
             {
-                outpath = respath.Replace(InFolder, OutFolder);
+                outpath = OutFolder + respath.Substring(InFolder.Length, respath.Length - InFolder.Length);
             }
             else
             {
@@ -445,7 +566,8 @@ namespace Cocos2Unity
                 }
                 if (!convertedSprite.sprite)
                 {
-                    throw new Exception("bad sprite");
+                    // throw new Exception("bad sprite");
+                    Debug.Log($"ERROR: sprite not find: {path}");
                 }
             }
             return convertedSprite;
@@ -453,7 +575,16 @@ namespace Cocos2Unity
 
         protected ConvertedSprite GetSprite(CsdFileLink imageData)
         {
-            var convertedSprite = ImportPlist(imageData.Plist)?[imageData.Path] ?? ImportSprite(imageData.Path);
+            ConvertedSprite convertedSprite = null;
+            var list = ImportPlist(imageData.Plist);
+            if (list != null)
+            {
+                list.TryGetValue(imageData.Path, out convertedSprite);
+            }
+            if (convertedSprite == null)
+            {
+                convertedSprite = ImportSprite(imageData.Path);
+            }
             return convertedSprite;
         }
 
@@ -583,6 +714,7 @@ namespace Cocos2Unity
 
             private void ConvertorProject(ProjectInfo project)
             {
+                Debug.Log($"PROCESS PROJECT {project.projectName}");
                 var findPath = project.projectPath + "\\" + project.findPath;
                 TarConvertor convertor = new TarConvertor();
                 convertor.SetRootPath(project.cocosstudioPath, new string[] { project.resPath, });
@@ -598,6 +730,7 @@ namespace Cocos2Unity
                         }
                     }
                 });
+                Debug.Log($"PROCESS PROJECT END {project.projectName}");
                 Cocos2Unity.CsdType.SwapAccessLog(convertor.OutFolder + project.projectName + "_unhandled.xml");
             }
         }
