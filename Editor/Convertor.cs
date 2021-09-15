@@ -210,6 +210,7 @@ namespace Cocos2Unity
                 }
                 ac.AddParameter(Name, AnimatorControllerParameterType.Trigger);
                 var trans = stateMachine.AddAnyStateTransition(state);
+                trans.hasExitTime = true;
                 trans.AddCondition(UnityEditor.Animations.AnimatorConditionMode.If, 1f, Name);
             }
             UnityEditor.Animations.AnimatorController.SetAnimatorController(animator, ac);
