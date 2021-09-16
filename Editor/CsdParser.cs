@@ -675,12 +675,16 @@ namespace Cocos2Unity
 
             DefaultAnimation = GetStringAttribute(Animation, "ActivedAnimationName", "");
             Timelines = CsdTimeline.ParseAll(Animation, FrameScale);
+            if (Timelines == null || Timelines.Count == 0)
+            {
+                Timelines = null;
+            }
         }
         private void ParseAnimationList(XmlElement AnimationList, float FrameScale)
         {
-            Animations = new Dictionary<string, CsdAnimInfo>();
             if (AnimationList != null)
             {
+                Animations = new Dictionary<string, CsdAnimInfo>();
                 foreach (XmlElement e in AnimationList)
                 {
                     var info = new CsdAnimInfo().Parse(e, FrameScale);
