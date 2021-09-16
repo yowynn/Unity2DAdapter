@@ -63,7 +63,7 @@ namespace Cocos2Unity
                 if (!image)
                 {
                     image = go.AddComponent<Image>();
-                    var color = val.ColorA;
+                    var color = val.Color;
                     image.color = new Color(color.R, color.G, color.B, color.A);
                 }
             }
@@ -188,44 +188,14 @@ namespace Cocos2Unity
                 Keyframe kf = new Keyframe(time, value);
                 ac.AddKey(kf);
             }
-            for (int i = 0; i < frameList.Count; i++)
+            for (int i = 0; i < frameList.Count - 1; i++)
             {
                 var frame = frameList[i];
-                AnimationUtility.SetKeyBroken(ac, i, true);
-                switch (frame.Type)
-                {
-                    case CsdCurveType.Constant:
-                        AnimationUtility.SetKeyRightTangentMode(ac, i, AnimationUtility.TangentMode.Constant);
-                        if (i + 1 < frameList.Count) AnimationUtility.SetKeyLeftTangentMode(ac, i + 1, AnimationUtility.TangentMode.Constant);
-                        break;
-                    case CsdCurveType.Costum:                   // TODO
-                        AnimationUtility.SetKeyRightTangentMode(ac, i, AnimationUtility.TangentMode.Linear);
-                        if (i + 1 < frameList.Count) AnimationUtility.SetKeyLeftTangentMode(ac, i + 1, AnimationUtility.TangentMode.Linear);
-                        break;
-                    case CsdCurveType.Linear:
-                        AnimationUtility.SetKeyRightTangentMode(ac, i, AnimationUtility.TangentMode.Linear);
-                        if (i + 1 < frameList.Count) AnimationUtility.SetKeyLeftTangentMode(ac, i + 1, AnimationUtility.TangentMode.Linear);
-                        break;
-                    case CsdCurveType.Sine_EaseIn:              // TODO similar curve
-                    case CsdCurveType.Quad_EaseIn:              // TODO similar curve
-                    case CsdCurveType.Cubic_EaseIn:             // TODO similar curve
-                        AnimationUtility.SetKeyRightTangentMode(ac, i, AnimationUtility.TangentMode.Auto);
-                        if (i + 1 < frameList.Count) AnimationUtility.SetKeyLeftTangentMode(ac, i + 1, AnimationUtility.TangentMode.Linear);
-                        break;
-                    case CsdCurveType.Sine_EaseOut:              // TODO similar curve
-                    case CsdCurveType.Quad_EaseOut:              // TODO similar curve
-                    case CsdCurveType.Cubic_EaseOut:             // TODO similar curve
-                        AnimationUtility.SetKeyRightTangentMode(ac, i, AnimationUtility.TangentMode.Linear);
-                        if (i + 1 < frameList.Count) AnimationUtility.SetKeyLeftTangentMode(ac, i + 1, AnimationUtility.TangentMode.Auto);
-                        break;
-                    default:
-                        AnimationUtility.SetKeyRightTangentMode(ac, i, AnimationUtility.TangentMode.Linear);
-                        if (i + 1 < frameList.Count) AnimationUtility.SetKeyLeftTangentMode(ac, i + 1, AnimationUtility.TangentMode.Linear);
-                        break;
-                }
+                SetFreeCubicBezier(ac, i, frame.Bezier);
             }
             return ac;
         }
+
 
         public static ObjectReferenceKeyframe[] getObjectCurve<T>(List<CsdFrame<T>> frameList, Func<T, UnityEngine.Object> getFrameValue) where T : ICsdParse<T>, new()
         {
@@ -239,6 +209,35 @@ namespace Cocos2Unity
                 ac[index++] = kf;
             }
             return ac;
+        }
+
+        private static void SetFreeCubicBezier(AnimationCurve ac, int i, float x1, float y1, float x2, float y2)
+        {
+            AnimationUtility.SetKeyBroken(ac, i, true);
+            AnimationUtility.SetKeyBroken(ac, i + 1, true);
+            AnimationUtility.SetKeyRightTangentMode(ac, i, AnimationUtility.TangentMode.Free);
+            AnimationUtility.SetKeyLeftTangentMode(ac, i + 1, AnimationUtility.TangentMode.Free);
+            var from = ac.keys[i];
+            var to = ac.keys[i + 1];
+            from.weightedMode = WeightedMode.Both;
+            to.weightedMode = WeightedMode.Both;
+            var scale = new Vector2(to.time - from.time, to.value - from.value);
+            if (scale.x > 0 && scale.y != 0)
+            {
+                var vfrom = new Vector2(x1, y1) * scale;
+                var vto = (new Vector2(x2, y2) - Vector2.one) * scale;
+                from.outTangent = vfrom.y / vfrom.x;
+                to.inTangent = vto.y / vto.x;
+                from.outWeight = x1;
+                to.inWeight = 1 - x2;
+                ac.MoveKey(i, from);
+                ac.MoveKey(i + 1, to);
+            }
+        }
+
+        private static void SetFreeCubicBezier(AnimationCurve ac, int i, CubicBezier bezier)
+        {
+            SetFreeCubicBezier(ac, i, bezier.x1, bezier.y1, bezier.x2, bezier.y2);
         }
     }
 }

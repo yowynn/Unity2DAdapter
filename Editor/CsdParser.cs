@@ -352,22 +352,49 @@ namespace Cocos2Unity
 
     public enum CsdCurveType
     {
-        Constant = -2,
-        Costum = -1,                                            // TODO
-        Linear = 0,
-        Sine_EaseIn = 1,                                        // TODO
-        Sine_EaseOut = 2,                                       // TODO
-        Quad_EaseIn = 4,                                        // TODO
-        Quad_EaseOut = 5,                                       // TODO
-        Cubic_EaseIn = 7,                                       // TODO
-        Cubic_EaseOut = 8,                                      // TODO
+        Constant                = -2,
+        Costum                  = -1,
+        Linear                  = 0,
+        EaseInSine              = 1,
+        EaseOutSine             = 2,
+        EaseInOutSine           = 3,
+        EaseInQuad              = 4,
+        EaseOutQuad             = 5,
+        EaseInOutQuad           = 6,
+        EaseInCubic             = 7,
+        EaseOutCubic            = 8,
+        EaseInOutCubic          = 9,
+        EaseInQuart             = 10,
+        EaseOutQuart            = 11,
+        EaseInOutQuart          = 12,
+        EaseInQuint             = 13,
+        EaseOutQuint            = 14,
+        EaseInOutQuint          = 15,
+        EaseInExpo              = 16,
+        EaseOutExpo             = 17,
+        EaseInOutExpo           = 18,
+        EaseInCirc              = 19,
+        EaseOutCirc             = 20,
+        EaseInOutCirc           = 21,
+        EaseInElastic           = 22,
+        EaseOutElastic          = 23,
+        EaseInOutElastic        = 24,
+        EaseInBack              = 25,
+        EaseOutBack             = 26,
+        EaseInOutBack           = 27,
+        EaseInBounce            = 28,
+        EaseOutBounce           = 29,
+        EaseInOutBounce         = 30,
     }
+
+
     public class CsdFrame<T> : CsdType, ICsdParse<CsdFrame<T>> where T : ICsdParse<T>, new()
     {
         public int FrameIndex;
         public float FrameScale;
         public T Value;
         public CsdCurveType Type = CsdCurveType.Linear;
+        public CubicBezier Bezier = CubicBezier.Linear;
         public float Time => FrameIndex * FrameScale;
 
         public CsdFrame<T> Parse(XmlElement e)
@@ -383,12 +410,33 @@ namespace Cocos2Unity
             if (!GetBoolAttribute(e, "Tween", true))
             {
                 Type = CsdCurveType.Constant;
+                Bezier = CubicBezier.Constant;
             }
             else if (GetElement(e, "EasingData") != null)
             {
                 var val = GetIntegerAttribute(GetElement(e, "EasingData"), "Type", 0);
                 if (Enum.IsDefined(typeof(CsdCurveType), val))
+                {
                     Type = (CsdCurveType)val;
+                    if (Type == CsdCurveType.Costum)
+                    {
+                        var points = GetElement(GetElement(e, "EasingData"), "Points");
+                        var p1 = (XmlElement)points.ChildNodes[1];
+                        var p2 = (XmlElement)points.ChildNodes[2];
+                        var x1 = GetFloatAttribute(p1, "X");
+                        var y1 = GetFloatAttribute(p1, "Y");
+                        var x2 = GetFloatAttribute(p2, "X");
+                        var y2 = GetFloatAttribute(p2, "Y");
+                        x1 = Math.Max(x1, 0.0001f);
+                        x2 = Math.Min(x2, 0.9999f);
+                        Bezier = new CubicBezier(x1, y1, x2, y2);
+                    }
+                    else
+                    {
+                        string mode = Type.ToString();
+                        Bezier = Bezier.FromMode(mode);
+                    }
+                }
                 else
                     LogNonAccessKey("Frame.EasingData.Type", "Type_" + val.ToString());
             }

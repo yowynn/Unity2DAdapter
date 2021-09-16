@@ -314,16 +314,6 @@ namespace Cocos2Unity
         private string GetGameObjectPath(GameObject go, GameObject root)
         {
             return AnimationUtility.CalculateTransformPath(go.transform, root.transform);
-            // string path = "";
-            // if (go != root)
-            // {
-            //     var parent = go.transform.parent.gameObject;
-            //     if (parent == root)
-            //         path = go.name;
-            //     else
-            //         path = GetGameObjectPath(parent, root) + "/" + go.name;
-            // }
-            // return path;
         }
 
         public bool IsConverted(string respath)
