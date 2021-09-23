@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.UI;
+using Wynncs.Entry;
 
 namespace Cocos2Unity
 {
@@ -211,14 +212,14 @@ namespace Cocos2Unity
             return ac;
         }
 
-        private static void SetFreeCubicBezier(AnimationCurve ac, int i, float x1, float y1, float x2, float y2)
+        private static void SetFreeCubicBezier(AnimationCurve ac, int keyIndex, float x1, float y1, float x2, float y2)
         {
-            AnimationUtility.SetKeyBroken(ac, i, true);
-            AnimationUtility.SetKeyBroken(ac, i + 1, true);
-            AnimationUtility.SetKeyRightTangentMode(ac, i, AnimationUtility.TangentMode.Free);
-            AnimationUtility.SetKeyLeftTangentMode(ac, i + 1, AnimationUtility.TangentMode.Free);
-            var from = ac.keys[i];
-            var to = ac.keys[i + 1];
+            AnimationUtility.SetKeyBroken(ac, keyIndex, true);
+            AnimationUtility.SetKeyBroken(ac, keyIndex + 1, true);
+            AnimationUtility.SetKeyRightTangentMode(ac, keyIndex, AnimationUtility.TangentMode.Free);
+            AnimationUtility.SetKeyLeftTangentMode(ac, keyIndex + 1, AnimationUtility.TangentMode.Free);
+            var from = ac.keys[keyIndex];
+            var to = ac.keys[keyIndex + 1];
             from.weightedMode = WeightedMode.Both;
             to.weightedMode = WeightedMode.Both;
             var scale = new Vector2(to.time - from.time, to.value - from.value);
@@ -230,14 +231,14 @@ namespace Cocos2Unity
                 to.inTangent = vto.y / vto.x;
                 from.outWeight = x1;
                 to.inWeight = 1 - x2;
-                ac.MoveKey(i, from);
-                ac.MoveKey(i + 1, to);
+                ac.MoveKey(keyIndex, from);
+                ac.MoveKey(keyIndex + 1, to);
             }
         }
 
-        private static void SetFreeCubicBezier(AnimationCurve ac, int i, CubicBezier bezier)
+        private static void SetFreeCubicBezier(AnimationCurve ac, int keyIndex, CubicBezier bezier)
         {
-            SetFreeCubicBezier(ac, i, bezier.x1, bezier.y1, bezier.x2, bezier.y2);
+            SetFreeCubicBezier(ac, keyIndex, bezier.x1, bezier.y1, bezier.x2, bezier.y2);
         }
     }
 }

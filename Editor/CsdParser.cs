@@ -1,7 +1,8 @@
 using System;
 using System.Xml;
-using System.Collections;
 using System.Collections.Generic;
+using Wynncs.Entry;
+using Wynncs.Util;
 
 namespace Cocos2Unity
 {
@@ -15,46 +16,32 @@ namespace Cocos2Unity
         {
             if (e == null) return defaultValue;
             AccessStatAttribute(e, attrName);
-            string val = GetAttribute(e, attrName)?.Value;
-            if (val == "True") return true;
-            if (val == "False") return false;
-            return defaultValue;
+            return XmlUtil.GetAttributeBool(e, attrName, defaultValue);
         }
         public static string GetStringAttribute(XmlElement e, string attrName, string defaultValue = "")
         {
             if (e == null) return defaultValue;
             AccessStatAttribute(e, attrName);
-            string val = GetAttribute(e, attrName)?.Value;
-            if (val != null) return val;
-            return defaultValue;
+            return XmlUtil.GetAttributeString(e, attrName, defaultValue);
         }
         public static float GetFloatAttribute(XmlElement e, string attrName, float defaultValue = 0f)
         {
             if (e == null) return defaultValue;
             AccessStatAttribute(e, attrName);
-            string val = GetAttribute(e, attrName)?.Value;
-            if (val != null) return float.Parse(val);
-            return defaultValue;
+            return XmlUtil.GetAttributeFloat(e, attrName, defaultValue);
         }
         public static int GetIntegerAttribute(XmlElement e, string attrName, int defaultValue = 0)
         {
             if (e == null) return defaultValue;
             AccessStatAttribute(e, attrName);
-            string val = GetAttribute(e, attrName)?.Value;
-            if (val != null) return int.Parse(val);
-            return defaultValue;
-        }
-
-        public static XmlAttribute GetAttribute(XmlElement e, string attrName)
-        {
-            return e?.Attributes?[attrName];
+            return XmlUtil.GetAttributeInt(e, attrName, defaultValue);
         }
 
         public static XmlElement GetElement(XmlElement e, string eleName)
         {
             if (e == null) return null;
             AccessStatElement(e, eleName);
-            return e[eleName];
+            return XmlUtil.GetElement(e, eleName);
         }
 
         private enum Type{
@@ -115,11 +102,9 @@ namespace Cocos2Unity
         {
             if (outfile != null)
             {
-                XmlDocument log = new XmlDocument();
-                var root = log.CreateElement("Root");
-                log.AppendChild(root);
-                var elements = log.CreateElement("Elements");
-                root.AppendChild(elements);
+                XmlDocument log = XmlUtil.Open();
+                var root = XmlUtil.AddElement(log, "Root");
+                var elements = XmlUtil.AddElement(root, "Elements");
                 foreach (var pair in ExistsSet)
                 {
                     var eleName = pair.Key;
@@ -137,37 +122,27 @@ namespace Cocos2Unity
                         {
                             if (e == null)
                             {
-                                e = log.CreateElement(eleName);
-                                elements.AppendChild(e);
+                                e = XmlUtil.AddElement(elements, eleName);
                             }
                             if (pair2.Value == Type.Attribute)
                             {
-                                var la = log.CreateAttribute(name);
-                                la.Value = "True";
-                                e.Attributes.SetNamedItem(la);
+                                XmlUtil.SetAttribute(e, name, true);
                             }
                             else if (pair2.Value == Type.Element)
                             {
-                                var la = log.CreateElement(name);
-                                e.AppendChild(la);
+                                XmlUtil.AddElement(e, name);
                             }
                         }
                     }
                 }
-                var logd = log.CreateElement("Logged");
-                root.AppendChild(logd);
+                var logd = XmlUtil.AddElement(root, "Logged");
                 foreach (var pair in LogedSet)
                 {
-                    var item = log.CreateElement("Item");
-                    logd.AppendChild(item);
-                    var path = log.CreateAttribute("_Path");
-                    path.Value = pair.Key;
-                    item.Attributes.SetNamedItem(path);
+                    var item = XmlUtil.AddElement(logd, "Item");
+                    var path = XmlUtil.SetAttribute(item, "_Path", pair.Key);
                     foreach (var pair0 in pair.Value)
                     {
-                        var a = log.CreateAttribute(pair0.Key);
-                        a.Value = pair0.Value.ToString();
-                        item.Attributes.SetNamedItem(a);
+                        XmlUtil.SetAttribute(item, pair0.Key, pair0.Value);
                     }
                 }
                 System.IO.Directory.CreateDirectory(System.IO.Path.GetDirectoryName(outfile));
@@ -434,7 +409,7 @@ namespace Cocos2Unity
                     else
                     {
                         string mode = Type.ToString();
-                        Bezier = Bezier.FromMode(mode);
+                        if (!CubicBezier.GetPreset(mode, out Bezier)) Bezier = new CubicBezier(0, 0, 0, 0);
                     }
                 }
                 else

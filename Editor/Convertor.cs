@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Animations;
+using Wynncs.Util;
 
 namespace Cocos2Unity
 {
@@ -18,7 +19,6 @@ namespace Cocos2Unity
         }
 
         public static System.Random Random = new System.Random();
-        public static Wynnsharp.XmlUtil XML = new Wynnsharp.XmlUtil();
         public string ProjectPath;
         public List<string> ResPath;
         public string InFolder;
@@ -98,7 +98,7 @@ namespace Cocos2Unity
             {
                 csdpath = csdpath.Replace('\\', '/');
                 var fullpath = TryGetFullResPath(csdpath);
-                var xml = XML.OpenXml(fullpath);
+                var xml = XmlUtil.Open(fullpath);
                 var parser = new CsdParser(xml);
 
 
@@ -633,8 +633,6 @@ namespace Cocos2Unity
 
         public class ConvertorProjects<TarConvertor> where TarConvertor : Convertor, new()
         {
-            public static Wynnsharp.FileSystemUtil FS = new Wynnsharp.FileSystemUtil();
-
             public struct ProjectInfo
             {
                 public string projectName;
@@ -658,7 +656,7 @@ namespace Cocos2Unity
 
             private void AnalyseInPath(string path)
             {
-                path = FS.GetPathInfo(path)?.FullName;
+                path = FileSystem.GetPathInfo(path)?.FullName;
                 if (path == null)
                 {
                     throw new Exception("path not find");
@@ -668,9 +666,9 @@ namespace Cocos2Unity
                 var parentpath = Path.GetDirectoryName(path);
                 while (parentpath != null && !found)
                 {
-                    FS.EnumPath(parentpath, f =>
+                    FileSystem.EnumPath(parentpath, f =>
                     {
-                        if (!FS.IsFolder(f) && f.Extension.ToLower() == ".ccs" && !found)
+                        if (!FileSystem.IsFolder(f) && f.Extension.ToLower() == ".ccs" && !found)
                         {
                             var projectInfo = new ProjectInfo();
                             projectInfo.projectPath = Path.GetDirectoryName(f.FullName);
@@ -686,9 +684,9 @@ namespace Cocos2Unity
                 }
                 if (!found)
                 {
-                    FS.EnumPath(path, f =>
+                    FileSystem.EnumPath(path, f =>
                     {
-                        if (!FS.IsFolder(f) && f.Extension.ToLower() == ".ccs")
+                        if (!FileSystem.IsFolder(f) && f.Extension.ToLower() == ".ccs")
                         {
                             var projectInfo = new ProjectInfo();
                             projectInfo.projectPath = Path.GetDirectoryName(f.FullName);
@@ -717,10 +715,10 @@ namespace Cocos2Unity
                 var findPath = project.projectPath + "\\" + project.findPath;
                 TarConvertor convertor = new TarConvertor();
                 convertor.SetRootPath(project.cocosstudioPath, new string[] { project.resPath, });
-                convertor.SetMapPath(FS.GetPath(findPath), OutFolder + "\\" + project.projectName);
-                FS.EnumPath(findPath, f =>
+                convertor.SetMapPath(FileSystem.GetFolderPath(findPath), OutFolder + "\\" + project.projectName);
+                FileSystem.EnumPath(findPath, f =>
                 {
-                    if (!FS.IsFolder(f) && f.Extension.ToLower() == ".csd")
+                    if (!FileSystem.IsFolder(f) && f.Extension.ToLower() == ".csd")
                     {
                         var csdresname = f.FullName.Replace(project.cocosstudioPath, "");
                         if (!convertor.IsConverted(csdresname))
@@ -730,7 +728,7 @@ namespace Cocos2Unity
                     }
                 });
                 Debug.Log($"PROCESS PROJECT END {project.projectName}");
-                Cocos2Unity.CsdType.SwapAccessLog(convertor.OutFolder + project.projectName + "_unhandled.xml");
+                Cocos2Unity.CsdType.SwapAccessLog(OutFolder + project.projectName + "_unhandled.xml");
             }
         }
 

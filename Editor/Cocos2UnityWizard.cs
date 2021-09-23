@@ -1,6 +1,7 @@
 using UnityEditor;
 using UnityEngine;
 using System.IO;
+using Wynncs.Util;
 
 namespace Cocos2Unity
 {
@@ -66,17 +67,14 @@ public class Csd2UnityPrefab : ScriptableWizard
 
         public static void XmlAnalyze(string path, string outfile, string extention = null)
         {
-            var fs = new Wynnsharp.FileSystemUtil();
-            var xml = new Wynnsharp.XmlUtil();
-
             path = "C:/Users/Wynn/Desktop/book";
-            fs.EnumPath(path, f =>
+            FileSystem.EnumPath(path, f =>
             {
-                if (!fs.IsFolder(f) && (extention == null || f.Extension.ToLower() == extention))
+                if (!FileSystem.IsFolder(f) && (extention == null || f.Extension.ToLower() == extention))
                 {
                     var srcfile = f.FullName;
-                // Debug.Log(srcfile);
-                xml.Statistics(srcfile, outfile, true);
+                    // Debug.Log(srcfile);
+                    XmlUtil.Statistics(srcfile, outfile, true);
                 }
             });
         }
