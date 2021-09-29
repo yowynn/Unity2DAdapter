@@ -138,7 +138,7 @@ namespace Cocos2Unity
 
                 var s = UnityEditor.SceneManagement.StageUtility.GetCurrentStageHandle().FindComponentsOfType<Canvas>();
                 var canvas = (s != null && s.Length > 0) ? s[0] : null;
-                if (canvas != null)
+                if (canvas != null && canvas.gameObject.activeSelf)
                 {
                     root.transform.SetParent(canvas.transform, false);
                 }
