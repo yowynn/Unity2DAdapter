@@ -728,7 +728,7 @@ namespace Cocos2Unity
                     }
                 });
                 Debug.Log($"PROCESS PROJECT END {project.projectName}");
-                Cocos2Unity.CsdType.SwapAccessLog(OutFolder + project.projectName + "_unhandled.xml");
+                Cocos2Unity.CsdType.SwapAccessLog(OutFolder + "\\" + project.projectName + "_unhandled.xml");
             }
         }
 

@@ -10,7 +10,7 @@ public class Csd2UnityPrefab : ScriptableWizard
         public string InForder = @"C:\Users\Wynn\Desktop\book\story_0036\cocosstudio\scenes\story\0036\content\layout\page_1\s0036_h001_siren.csd";
         public string OutFolder = "";
 
-        public static string DefaultOutPath => Application.dataPath + "/output";
+        public static string DefaultOutPath => Application.dataPath + "/art/story";
 
         [MenuItem("COCOS/Csd2UnityPrefab")]
         static void CreateWizard()

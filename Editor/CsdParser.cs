@@ -422,6 +422,7 @@ namespace Cocos2Unity
     public class CsdNode : CsdType, ICsdParse<CsdNode>
     {
         public string Name;                                     // 名字
+        public string Path = "";                                // 路径（debug）
         public string Tag;                                      // 唯一标签
         public string ActionTag;                                // 动画标签
         public bool isActive;                                   // 是否显示 / 激活
@@ -438,9 +439,15 @@ namespace Cocos2Unity
         public CsdFileLink FillImage;                           // 填充图片
         public CsdFileLink FillNode;                            // 填充其他节点
         public CsdColorGradient FillColor;                      // 填充背景颜色（渐变）
+
         public CsdNode Parse(XmlElement e)
         {
+            return Parse(e, null);
+        }
+        public CsdNode Parse(XmlElement e, string pathPrefix)
+        {
             Name = GetStringAttribute(e, "Name");
+            Path = (pathPrefix != null || pathPrefix != "" ? (pathPrefix + "/") : "") + Name;
             Tag = GetStringAttribute(e, "Tag");
             ActionTag = GetStringAttribute(e, "ActionTag", null);
             isActive = GetBoolAttribute(e, "VisibleForFrame", true);
@@ -478,13 +485,29 @@ namespace Cocos2Unity
                 Children = new List<CsdNode>();
                 foreach (XmlElement child in ChildrenElement)
                 {
-                    Children.Add(new CsdNode().Parse(child));
+                    Children.Add(new CsdNode().Parse(child, Path));
                 }
             }
 
-            var IconVisible = GetBoolAttribute(e, "IconVisible", true);                                                         // Ignored
-            var PreSize = new CsdVector3().Parse(GetElement(e, "PreSize"));                                                     // Ignored
-            var PrePosition = new CsdVector3().Parse(GetElement(e, "PrePosition"));                                             // Ignored
+            // ! debug log
+            var deltaSkew = RotationSkew.X - RotationSkew.Y > 0 ? RotationSkew.X - RotationSkew.Y : RotationSkew.Y - RotationSkew.X;
+            if (deltaSkew > 50) LogNonAccessKey("DeltaSkew", "Step50_");
+            else if (deltaSkew > 30) {LogNonAccessKey("DeltaSkew", "Step30_50");LogNonAccessKey("#" + Path, "Step30_50");}
+            else if (deltaSkew > 20) LogNonAccessKey("DeltaSkew", "Step20_30");
+            else if (deltaSkew > 10) LogNonAccessKey("DeltaSkew", "Step10_20");
+            else if (deltaSkew > 5) LogNonAccessKey("DeltaSkew", "Step05_10");
+            else if (deltaSkew > 0) LogNonAccessKey("DeltaSkew", "Step00_05");
+            if (Children != null)
+            {
+                if (Color.R != 1f || Color.G != 1f || Color.B != 1f) {LogNonAccessKey("ChildrenInherit", "ColorRGB");LogNonAccessKey("#" + Path, "ColorRGB");}
+                if (Color.A != 1f) {LogNonAccessKey("ChildrenInherit", "ColorA");LogNonAccessKey("#" + Path, "ColorA");}
+                if (deltaSkew > 3f) {LogNonAccessKey("ChildrenInherit", "DeltaSkew");LogNonAccessKey("#" + Path, "DeltaSkew");}
+            }
+            if (FillColor != null && FillColor.Mode == CsdColorGradient.ColorMode.Gradient) LogNonAccessKey("FillColor", "Gradient");
+
+            // var IconVisible = GetBoolAttribute(e, "IconVisible", true);                                                         // Ignored
+            // var PreSize = new CsdVector3().Parse(GetElement(e, "PreSize"));                                                     // Ignored
+            // var PrePosition = new CsdVector3().Parse(GetElement(e, "PrePosition"));                                             // Ignored
             return this;
         }
 
@@ -576,6 +599,17 @@ namespace Cocos2Unity
                     break;
                 case "RotationSkew":
                     Rotation = ParseFrameList<CsdVector3>(e, FrameScale);
+                    foreach(var f in Rotation)
+                    {
+                        var RotationSkew = f.Value;
+                        var deltaSkew = RotationSkew.X - RotationSkew.Y > 0 ? RotationSkew.X - RotationSkew.Y : RotationSkew.Y - RotationSkew.X;
+                        if (deltaSkew > 50) LogNonAccessKey("DeltaSkew_Animation", "Step50_");
+                        else if (deltaSkew > 30) LogNonAccessKey("DeltaSkew_Animation", "Step30_50");
+                        else if (deltaSkew > 20) LogNonAccessKey("DeltaSkew_Animation", "Step20_30");
+                        else if (deltaSkew > 10) LogNonAccessKey("DeltaSkew_Animation", "Step10_20");
+                        else if (deltaSkew > 5) LogNonAccessKey("DeltaSkew_Animation", "Step05_10");
+                        else if (deltaSkew > 0) LogNonAccessKey("DeltaSkew_Animation", "Step00_05");
+                    }
                     break;
                 case "FileData":
                     Image = ParseFrameList<CsdFileLink>(e, FrameScale);
@@ -684,7 +718,7 @@ namespace Cocos2Unity
             {
                 throw new Exception("no ObjectData");
             }
-            Node = new CsdNode().Parse(ObjectData);
+            Node = new CsdNode().Parse(ObjectData, Name+"/");
         }
         private void ParseAnimation(XmlElement Animation, out float FrameScale)
         {
