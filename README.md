@@ -3,7 +3,7 @@
 - GameProjectFile (`DEMO.csd`)
     - [x]  Animation — AnimationClip (`*DEMO_aniname.anim`)
         - [x]  `[A]` ActivedAnimationName — stateMachine 's default state
-        - [ ]  `[A]` Duration — ignored
+        - [ ]  `[A]` ~~Duration~~ — ignored
         - [x]  `[A]` Speed — calc a param: frameIndex to time
         - [x]  *Timeline
             - [x]  `[A]` ActionTag — to link the game object
@@ -12,7 +12,7 @@
                 - [x]  `="Scale"` — link `RectTransform->m_LocalScale`
                 - [x]  `="AnchorPoint"` — link `RectTransform->m_Pivot`
                 - [x]  `="VisibleForFrame"` — link `GameObject->m_IsActive`
-                - [ ]  `="RotationSkew"` —  link `RectTransform->m_LocalRotation`  **(!Ignore Skew)**
+                - [x]  `="RotationSkew"` —  link `RectTransform->m_LocalRotation` / `MeshTransform(Script).m_Skew`
                 - [x]  `="FileData"` — link `Image->m_Sprite`
                 - [x]  `="Alpha"` — link `Image->m_Color.a`
                 - [ ]  `="ActionValue"` —  sub anim behaviour anim? **(!Not implement)**
@@ -21,32 +21,56 @@
                 - [x]  `[A]` Tween — Constant Easing Type
                 - [x]  EasingData — describe the curve shape
                     - [x]  `[A]` Type
-                        - [ ]  `="-1"` — Custom Easing Type **(!Use Linear)**
-                            - [ ]  Points
-                                - [ ]  *PointF
-                        - [x]  `="0"` — Linear Easing Type
-                        - [ ]  `="1"` — Sine_EaseIn Easing Type  **(!Similarly use Unity Smooth In)**
-                        - [ ]  `="2"` — Sine_EaseOut Easing Type  **(!Similarly use Unity Smooth Out)**
-                        - [ ]  `="4"` — Quad_EaseIn Easing Type  **(!Similarly use Unity Smooth In)**
-                        - [ ]  `="5"` — Quad_EaseOut Easing Type  **(!Similarly use Unity Smooth Out)**
-                        - [ ]  `="7"` — Cubic_EaseIn Easing Type  **(!Similarly use Unity Smooth In)**
-                        - [ ]  `="8"` — Cubic_EaseOut Easing Type  **(!Similarly use Unity Smooth Out)**
+                        - [x]  [x] `="-1"` — Costum Easing Type
+                            - [x]  Points
+                                - [x]  *PointF
+                        - [x]  [x] `="0"` — Linear Easing Type
+                        - [x]  [x] `="1"` — EaseInSine Easing Type
+                        - [x]  [x] `="2"` — EaseOutSine Easing Type
+                        - [x]  [x] `="3"` — EaseInOutSine Easing Type
+                        - [x]  [x] `="4"` — EaseInQuad Easing Type
+                        - [x]  [x] `="5"` — EaseOutQuad Easing Type
+                        - [x]  [x] `="6"` — EaseInOutQuad Easing Type
+                        - [x]  [x] `="7"` — EaseInCubic Easing Type
+                        - [x]  [x] `="8"` — EaseOutCubic Easing Type
+                        - [x]  [x] `="9"` — EaseInOutCubic Easing Type
+                        - [x]  [x] `="10"` — EaseInQuart Easing Type
+                        - [x]  [x] `="11"` — EaseOutQuart Easing Type
+                        - [x]  [x] `="12"` — EaseInOutQuart Easing Type
+                        - [x]  [x] `="13"` — EaseInQuint Easing Type
+                        - [x]  [x] `="14"` — EaseOutQuint Easing Type
+                        - [x]  [x] `="15"` — EaseInOutQuint Easing Type
+                        - [x]  [x] `="16"` — EaseInExpo Easing Type
+                        - [x]  [x] `="17"` — EaseOutExpo Easing Type
+                        - [x]  [x] `="18"` — EaseInOutExpo Easing Type
+                        - [x]  [x] `="19"` — EaseInCirc Easing Type
+                        - [x]  [x] `="20"` — EaseOutCirc Easing Type
+                        - [x]  [x] `="21"` — EaseInOutCirc Easing Type
+                        - [ ]  [ ] `="22"` — EaseInElastic Easing Type **(!Cannot use simple cubic bezier)**
+                        - [ ]  [ ] `="23"` — EaseOutElastic Easing Type **(!Cannot use simple cubic bezier)**
+                        - [ ]  [ ] `="24"` — EaseInOutElastic Easing Type **(!Cannot use simple cubic bezier)**
+                        - [x]  [x] `="25"` — EaseInBack Easing Type
+                        - [x]  [x] `="26"` — EaseOutBack Easing Type
+                        - [x]  [x] `="27"` — EaseInOutBack Easing Type
+                        - [ ]  [ ] `="28"` — EaseInBounce Easing Type **(!Cannot use simple cubic bezier)**
+                        - [ ]  [ ] `="29"` — EaseOutBounce Easing Type **(!Cannot use simple cubic bezier)**
+                        - [ ]  [ ] `="30"` — EaseInOutBounce Easing Type **(!Cannot use simple cubic bezier)**
     - [x]  AnimationList — AnimatorController (`DEMO.controller`)
         - [x]  *AnimationInfo
             - [x]  `[A]` Name — state name / `aniname`
             - [x]  `[A]` StartIndex — cut the main timeline from
             - [x]  `[A]` EndIndex — cut the main timeline to
-            - [ ]  RenderColor — ignored, just use in cocos editor
+            - [ ]  ~~RenderColor~~ — ignored, just use in cocos editor
     - [x]  ObjectData — GameObject (`DEMO.prefab`)
         - [x]  `[A]` Name — `gameObject.name`
         - [ ]  `[A]` ~~Tag~~ — ignored, unique key
         - [x]  `[A]` ActionTag — to link the timeline
         - [x]  `[A]` VisibleForFrame — `gameObject.activeSelf`
         - [x]  `[A]` TouchEnable — `gameObject.Image.raycastTarget`
-        - [ ]  `[A]` CanEdit — ignored, just use in cocos editor
+        - [ ]  `[A]` ~~CanEdit~~ — ignored, just use in cocos editor
         - [ ]  `[A]` ~~Rotation~~ — ignored, same as "*RotationSkewX*"
-        - [ ]  `[A]` RotationSkewX — `gameObject.RectTransform.localRotation.z` **(!Ignore Skew)**
-        - [ ]  `[A]` RotationSkewY — `gameObject.RectTransform.localRotation.z` **(!Ignore Skew)**
+        - [x]  `[A]` RotationSkewX — `gameObject.RectTransform.localRotation.z` (x 斜切用原生的旋转实现)
+        - [x]  `[A]` RotationSkewY — `gameObject.MeshTransform(Script).m_Skew` (y 与 x 斜切的差值，用MeshTransform改顶点来实现)
         - [x]  `[A]` HorizontalEdge — `gameObject.RectTransform.anchorMin/anchorMax`
         - [x]  `[A]` VerticalEdge — `gameObject.RectTransform.anchorMin/anchorMax`
         - [x]  `[A]` LeftMargin — `gameObject.RectTransform.anchorMin/anchorMax`
@@ -54,8 +78,8 @@
         - [x]  `[A]` TopMargin — `gameObject.RectTransform.anchorMin/anchorMax`
         - [x]  `[A]` BottomMargin — `gameObject.RectTransform.anchorMin/anchorMax`
         - [ ]  IconVisible — ignored, dont know the usage
-        - [ ]  `[A]` Alpha — `gameObject.Image.color.a` **(!Affects children)**
-        - [ ]  CColor — `gameObject.Image.color` **(!Affects children)**
+        - [x]  `[A]` Alpha — `gameObject.Image.color.a` (组的Alpha, 用`gameObject.MeshTransform(Script).m_Color.a` 来实现)
+        - [x]  CColor — `gameObject.Image.color` (组的Color, 用`gameObject.MeshTransform(Script).m_Color` 来实现)
         - [ ]  PreSize — ignored, dont know the usage
         - [x]  Size — `gameObject.RectTransform.sizeDelta`
         - [x]  AnchorPoint — `gameObject.RectTransform.pivot`
