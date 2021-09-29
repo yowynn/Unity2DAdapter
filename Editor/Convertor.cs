@@ -94,12 +94,13 @@ namespace Cocos2Unity
         public void Convert(string csdpath)
         {
             Debug.Log($"PROCESS CSDFILE {csdpath}");
+            CsdParser parser = null;
             try
             {
                 csdpath = csdpath.Replace('\\', '/');
                 var fullpath = TryGetFullResPath(csdpath);
                 var xml = XmlUtil.Open(fullpath);
-                var parser = new CsdParser(xml);
+                parser = new CsdParser(xml);
 
 
                 // create GameObject
@@ -149,6 +150,10 @@ namespace Cocos2Unity
             catch (Exception e)
             {
                 Debug.Log($"PROCESS CSDFILE ERR: {e.Message}");
+                if (parser != null)
+                {
+                    CsdType.LogNonAccessKey(csdpath + "#ERROR:" + e.Message, "Count");
+                }
             }
             Debug.Log($"PROCESS CSDFILE END {csdpath}");
         }

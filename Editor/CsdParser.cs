@@ -84,7 +84,7 @@ namespace Cocos2Unity
             if (!acs.ContainsKey(eleName)) acs.Add(eleName, Type.Element);
         }
 
-        protected static void LogNonAccessKey(string path, string val)
+        public static void LogNonAccessKey(string path, string val)
         {
             if (!LogedSet.TryGetValue(path, out var logd))
             {
@@ -351,15 +351,15 @@ namespace Cocos2Unity
         EaseInCirc              = 19,
         EaseOutCirc             = 20,
         EaseInOutCirc           = 21,
-        EaseInElastic           = 22,
-        EaseOutElastic          = 23,
-        EaseInOutElastic        = 24,
+        // EaseInElastic           = 22,
+        // EaseOutElastic          = 23,
+        // EaseInOutElastic        = 24,
         EaseInBack              = 25,
         EaseOutBack             = 26,
         EaseInOutBack           = 27,
-        EaseInBounce            = 28,
-        EaseOutBounce           = 29,
-        EaseInOutBounce         = 30,
+        // EaseInBounce            = 28,
+        // EaseOutBounce           = 29,
+        // EaseInOutBounce         = 30,
     }
 
 

@@ -43,7 +43,21 @@ namespace Cocos2Unity
             rt.anchoredPosition = GetAnchoredPosition(go, val);
         };
 
-        private Action<GameObject, CsdVector3> ConvertCanvasGameObject_Rotation = (go, val) => go.GetComponent<RectTransform>().Rotate(0, 0, -val.X);
+        private Action<GameObject, CsdVector3> ConvertCanvasGameObject_Rotation = (go, val) =>
+        {
+            var rotationZ = -val.X;
+            var deltaSkew = val.X - val.Y;
+            go.GetComponent<RectTransform>().localEulerAngles = new Vector3(0, 0, rotationZ);
+            if (deltaSkew > 1f || deltaSkew < -1f)
+            {
+                if (!go.TryGetComponent<Cocos2Unity.Runtime.MeshTransform>(out var mt))
+                {
+                    mt = go.AddComponent<Cocos2Unity.Runtime.MeshTransform>();
+                }
+                mt.Skew = new Vector2(0, deltaSkew);
+            }
+            go.GetComponent<RectTransform>().Rotate(0, 0, -val.X);
+        };
         private Action<GameObject, CsdVector3> ConvertCanvasGameObject_Scale = (go, val) => go.GetComponent<RectTransform>().localScale = new Vector3(val.X, val.Y, val.Z);
         private Action<GameObject, CsdVector3> ConvertCanvasGameObject_Pivot = (go, val) => go.GetComponent<RectTransform>().pivot = new Vector2(val.X, val.Y);
         private Action<GameObject, CsdVector3> ConvertCanvasGameObject_Anchor = (go, val) =>
@@ -54,19 +68,18 @@ namespace Cocos2Unity
         };
         private Action<GameObject, CsdVector3> ConvertCanvasGameObject_AnchorMax = (go, val) => go.GetComponent<RectTransform>().anchorMax = new Vector2(val.X, val.Y);
         private void ConvertCanvasGameObject_Image(GameObject go, CsdFileLink val) { if (val != null) LoadCanvasImage(go, val); }
-        private void ConvertCanvasGameObject_Color(GameObject go, CsdColor val) { if (val != null) SetCanvasImageColor(go, val); }
+        private void ConvertCanvasGameObject_Color(GameObject go, CsdColor val) { if (val != null) SetCanvasNodeColor(go, val); }
         private void ConvertCanvasGameObject_isInteractive(GameObject go, bool val) { SetCanvasImageInteractive(go, val); }
         private void ConvertCanvasGameObject_BackgroundColor(GameObject go, CsdColorGradient val)
         {
             if (val != null && val.Mode != CsdColorGradient.ColorMode.None)
             {
-                var image = go.GetComponent<Image>();
-                if (!image)
+                if (!go.TryGetComponent<Image>(out var image))
                 {
                     image = go.AddComponent<Image>();
-                    var color = val.Color;
-                    image.color = new Color(color.R, color.G, color.B, color.A);
                 }
+                var color = val.Color;
+                image.color = new Color(color.R, color.G, color.B, color.A);
             }
         }
         private void ConvertCanvasGameObject_Children(GameObject go, List<CsdNode> val) { if (val != null) foreach (var child in val) CreateGameObject(child, go); }
@@ -83,43 +96,52 @@ namespace Cocos2Unity
         }
         private void LoadCanvasImage(GameObject go, CsdFileLink imageData)
         {
-            var image = go.GetComponent<Image>();
-            if (!image)
+            if (!go.TryGetComponent<Image>(out var image))
             {
                 image = go.AddComponent<Image>();
             }
-            // image.color = new Color(Random.Next(100) / 100f, Random.Next(100) / 100f, Random.Next(100) / 100f);
             var convertedSprite = GetSprite(imageData);
             if (convertedSprite?.sprite != null)
             {
                 image.sprite = convertedSprite.sprite;
+                if (image.sprite.name == "s0036_h004_laoshi_shenti")
+                {
+                    var a = 1;
+                }
                 if (convertedSprite.rotated)
                 {
                     // image.transform.Rotate(0, 0, 90);
                     // var rt = image.GetComponent<RectTransform>();
                     // rt.sizeDelta = new Vector2(rt.sizeDelta.y, rt.sizeDelta.x);
                     // rt.pivot = new Vector2(rt.pivot.y, 1 - rt.pivot.x);
-                    var ori = go.AddComponent<UIOrientation>();
-                    ori.Orientation = UIOrientation.OrientationEnum.Left;
+                    if (!go.TryGetComponent<Cocos2Unity.Runtime.MeshTransform>(out var mt))
+                    {
+                        mt = go.AddComponent<Cocos2Unity.Runtime.MeshTransform>();
+                    }
+                    mt.Orientation = Cocos2Unity.Runtime.GraphicOrientation.Left;
                 }
             }
         }
 
-        private void SetCanvasImageColor(GameObject go, CsdColor color)
+        private void SetCanvasNodeColor(GameObject go, CsdColor color)
         {
-            var image = go.GetComponent<Image>();
-            if (!image)
+            if (go.TryGetComponent<Image>(out var image))
             {
-                // image = go.AddComponent<Image>();
-                return;
+                image.color = new Color(color.R, color.G, color.B, color.A);
             }
-            image.color = new Color(color.R, color.G, color.B, color.A);
+            else
+            {
+                if (!go.TryGetComponent<Cocos2Unity.Runtime.MeshTransform>(out var mt))
+                {
+                    mt = go.AddComponent<Cocos2Unity.Runtime.MeshTransform>();
+                }
+                mt.Color = new Color(color.R, color.G, color.B, color.A);
+            }
         }
 
         private void SetCanvasImageInteractive(GameObject go, bool isInteractive)
         {
-            var image = go.GetComponent<Image>();
-            if (!image)
+            if (!go.TryGetComponent<Image>(out var image))
             {
                 if (isInteractive)
                 {
@@ -156,6 +178,11 @@ namespace Cocos2Unity
                 AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.y"), getFloatCurve(timeline.Rotation, val => Quaternion.Euler(0, 0, -val.X).y));
                 AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.z"), getFloatCurve(timeline.Rotation, val => Quaternion.Euler(0, 0, -val.X).z));
                 AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.w"), getFloatCurve(timeline.Rotation, val => Quaternion.Euler(0, 0, -val.X).w));
+                if (!go.TryGetComponent<Cocos2Unity.Runtime.MeshTransform>(out var mt))
+                {
+                    mt = go.AddComponent<Cocos2Unity.Runtime.MeshTransform>();
+                }
+                AnimationUtility.SetEditorCurve(clip, GetBinding<Cocos2Unity.Runtime.MeshTransform>("m_Skew.y"), getFloatCurve(timeline.Rotation, val => val.Y - val.X));
             }
             if (timeline.Scale != null)
             {
@@ -175,7 +202,17 @@ namespace Cocos2Unity
             if (timeline.Color_Alpha != null)
             {
                 if (go.TryGetComponent<Image>(out var _))
+                {
                     AnimationUtility.SetEditorCurve(clip, GetBinding<Image>("m_Color.a"), getFloatCurve(timeline.Color_Alpha, val => val));
+                }
+                else
+                {
+                    if (!go.TryGetComponent<Cocos2Unity.Runtime.MeshTransform>(out var mt))
+                    {
+                        mt = go.AddComponent<Cocos2Unity.Runtime.MeshTransform>();
+                    }
+                    AnimationUtility.SetEditorCurve(clip, GetBinding<Cocos2Unity.Runtime.MeshTransform>("m_Color.a"), getFloatCurve(timeline.Color_Alpha, val => val));
+                }
             }
 
         }
