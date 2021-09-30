@@ -82,7 +82,6 @@ namespace Cocos2Unity.Runtime
                 {
                     var SkewRad = m_Skew * Mathf.Deg2Rad;
                     (pos.x, pos.y) = (pos.x * Mathf.Cos(SkewRad.y) - pos.y * Mathf.Sin(SkewRad.x), pos.y * Mathf.Cos(SkewRad.x) + pos.x * Mathf.Sin(SkewRad.y));
-                    (pos.x, pos.y) = (pos.x * Mathf.Cos(SkewRad.y) - pos.y * Mathf.Sin(SkewRad.x), pos.y * Mathf.Cos(SkewRad.x) + pos.x * Mathf.Sin(SkewRad.y));
                 }
                 // Modify Color
                 if (MixedColor != Color.white)

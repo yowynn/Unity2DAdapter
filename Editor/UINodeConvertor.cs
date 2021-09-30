@@ -45,18 +45,19 @@ namespace Cocos2Unity
 
         private Action<GameObject, CsdVector3> ConvertCanvasGameObject_Rotation = (go, val) =>
         {
-            var rotationZ = -val.X;
-            var deltaSkew = val.X - val.Y;
-            go.GetComponent<RectTransform>().localEulerAngles = new Vector3(0, 0, rotationZ);
-            if (deltaSkew > 1f || deltaSkew < -1f)
+            (var rotation, var skew) = SeparateRotationAndSkew(val);
+            if (rotation != Vector3.zero)
+            {
+                go.GetComponent<RectTransform>().localEulerAngles = rotation;
+            }
+            if (skew != Vector2.zero)
             {
                 if (!go.TryGetComponent<Cocos2Unity.Runtime.MeshTransform>(out var mt))
                 {
                     mt = go.AddComponent<Cocos2Unity.Runtime.MeshTransform>();
                 }
-                mt.Skew = new Vector2(0, deltaSkew);
+                mt.Skew = skew;
             }
-            go.GetComponent<RectTransform>().Rotate(0, 0, -val.X);
         };
         private Action<GameObject, CsdVector3> ConvertCanvasGameObject_Scale = (go, val) => go.GetComponent<RectTransform>().localScale = new Vector3(val.X, val.Y, val.Z);
         private Action<GameObject, CsdVector3> ConvertCanvasGameObject_Pivot = (go, val) => go.GetComponent<RectTransform>().pivot = new Vector2(val.X, val.Y);
@@ -104,10 +105,6 @@ namespace Cocos2Unity
             if (convertedSprite?.sprite != null)
             {
                 image.sprite = convertedSprite.sprite;
-                if (image.sprite.name == "s0036_h004_laoshi_shenti")
-                {
-                    var a = 1;
-                }
                 if (convertedSprite.rotated)
                 {
                     // image.transform.Rotate(0, 0, 90);
@@ -121,6 +118,20 @@ namespace Cocos2Unity
                     mt.Orientation = Cocos2Unity.Runtime.GraphicOrientation.Left;
                 }
             }
+        }
+
+        private static (Vector3 Rotation, Vector2 Skew) SeparateRotationAndSkew(CsdVector3 rotationSkew)
+        {
+            var tuple = (Rotation: Vector3.zero, Skew: Vector2.zero);
+            if (Mathf.Abs(rotationSkew.X - rotationSkew.Y) > 1)
+            {
+                tuple.Skew = new Vector2(-rotationSkew.X, -rotationSkew.Y);
+            }
+            else
+            {
+                tuple.Rotation = new Vector3(0, 0, -rotationSkew.X);
+            }
+            return tuple;
         }
 
         private void SetCanvasNodeColor(GameObject go, CsdColor color)
@@ -174,15 +185,45 @@ namespace Cocos2Unity
             }
             if (timeline.RotationSkew != null)
             {
-                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.x"), getFloatCurve(timeline.RotationSkew, val => Quaternion.Euler(0, 0, -val.X).x));
-                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.y"), getFloatCurve(timeline.RotationSkew, val => Quaternion.Euler(0, 0, -val.X).y));
-                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.z"), getFloatCurve(timeline.RotationSkew, val => Quaternion.Euler(0, 0, -val.X).z));
-                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.w"), getFloatCurve(timeline.RotationSkew, val => Quaternion.Euler(0, 0, -val.X).w));
-                if (!go.TryGetComponent<Cocos2Unity.Runtime.MeshTransform>(out var mt))
+                // AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.x"), getFloatCurve(timeline.RotationSkew, val => Quaternion.Euler(0, 0, -val.X).x));
+                // AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.y"), getFloatCurve(timeline.RotationSkew, val => Quaternion.Euler(0, 0, -val.X).y));
+                // AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.z"), getFloatCurve(timeline.RotationSkew, val => Quaternion.Euler(0, 0, -val.X).z));
+                // AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.w"), getFloatCurve(timeline.RotationSkew, val => Quaternion.Euler(0, 0, -val.X).w));
+
+                bool hasSkew = false;
+                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.x"), getFloatCurve(timeline.RotationSkew, val =>
                 {
-                    mt = go.AddComponent<Cocos2Unity.Runtime.MeshTransform>();
+                    var sep = SeparateRotationAndSkew(val);
+                    hasSkew = hasSkew || sep.Skew != Vector2.zero;
+                    return Quaternion.Euler(sep.Rotation).x;
+                }));
+                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.y"), getFloatCurve(timeline.RotationSkew, val =>
+                {
+                    var sep = SeparateRotationAndSkew(val);
+                    hasSkew = hasSkew || sep.Skew != Vector2.zero;
+                    return Quaternion.Euler(sep.Rotation).y;
+                }));
+                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.z"), getFloatCurve(timeline.RotationSkew, val =>
+                {
+                    var sep = SeparateRotationAndSkew(val);
+                    hasSkew = hasSkew || sep.Skew != Vector2.zero;
+                    return Quaternion.Euler(sep.Rotation).z;
+                }));
+                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.w"), getFloatCurve(timeline.RotationSkew, val =>
+                {
+                    var sep = SeparateRotationAndSkew(val);
+                    hasSkew = hasSkew || sep.Skew != Vector2.zero;
+                    return Quaternion.Euler(sep.Rotation).w;
+                }));
+                if (hasSkew)
+                {
+                    if (!go.TryGetComponent<Cocos2Unity.Runtime.MeshTransform>(out var mt))
+                    {
+                        mt = go.AddComponent<Cocos2Unity.Runtime.MeshTransform>();
+                    }
+                    AnimationUtility.SetEditorCurve(clip, GetBinding<Cocos2Unity.Runtime.MeshTransform>("m_Skew.x"), getFloatCurve(timeline.RotationSkew, val => SeparateRotationAndSkew(val).Skew.x));
+                    AnimationUtility.SetEditorCurve(clip, GetBinding<Cocos2Unity.Runtime.MeshTransform>("m_Skew.y"), getFloatCurve(timeline.RotationSkew, val => SeparateRotationAndSkew(val).Skew.y));
                 }
-                AnimationUtility.SetEditorCurve(clip, GetBinding<Cocos2Unity.Runtime.MeshTransform>("m_Skew.y"), getFloatCurve(timeline.RotationSkew, val => val.Y - val.X));
             }
             if (timeline.Scale != null)
             {
@@ -226,7 +267,7 @@ namespace Cocos2Unity
                 Keyframe kf = new Keyframe(time, value);
                 ac.AddKey(kf);
             }
-            for (int i = 0; i < frameList.Count - 1; i++)
+            for (int i = 0; i < ac.keys.Length - 1; i++)
             {
                 var frame = frameList[i];
                 SetFreeCubicBezier(ac, i, frame.Bezier);
