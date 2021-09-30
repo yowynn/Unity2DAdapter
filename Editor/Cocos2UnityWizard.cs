@@ -7,8 +7,18 @@ namespace Cocos2Unity
 {
 public class Csd2UnityPrefab : ScriptableWizard
     {
+        [SerializeField, Tooltip("导入目录")]
         public string InForder = @"C:\Users\Wynn\Desktop\book\story_0036\cocosstudio\scenes\story\0036\content\layout\page_1\s0036_h001_siren.csd";
+
+        [SerializeField, Tooltip("导出目录（必须在 /Assets 下）")]
         public string OutFolder = "";
+
+        [SerializeField, Tooltip("原资源文件相对ccs项目根目录路径")]
+        public string RelativeSrcResPath = "cocosstudio";
+
+        [SerializeField, Tooltip("原导出文件相对ccs项目根目录路径")]
+
+        public string RelativeExpResPath = "res";
 
         public static string DefaultOutPath => Application.dataPath + "/art/story";
 
@@ -81,7 +91,10 @@ public class Csd2UnityPrefab : ScriptableWizard
 
         public void ConventCsds()
         {
-            new Cocos2Unity.Convertor.ConvertorProjects<Cocos2Unity.UINodeConvertor>().Convert(InForder, OutFolder);
+            var pc = new Cocos2Unity.Convertor.ProjectsConvertor<Cocos2Unity.UINodeConvertor>();
+            pc.RelativeSrcResPath = RelativeSrcResPath;
+            pc.RelativeExpResPath = RelativeExpResPath;
+            pc.Convert(InForder, OutFolder);
         }
     }
 }

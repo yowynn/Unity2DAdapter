@@ -636,18 +636,21 @@ namespace Cocos2Unity
 
 
 
-        public class ConvertorProjects<TarConvertor> where TarConvertor : Convertor, new()
+        public class ProjectsConvertor<TarConvertor> where TarConvertor : Convertor, new()
         {
             public struct ProjectInfo
             {
                 public string projectName;
                 public string projectPath;
-                public string cocosstudioPath;
-                public string resPath;
+                public string srcResPath;
+                public string expResPath;
                 public string findPath;
             }
             public List<ProjectInfo> Projects;
             public string OutFolder;
+
+            public string RelativeSrcResPath { get; set; } = "cocosstudio";
+            public string RelativeExpResPath { get; set; } = "res";
 
             public void Convert(string path, string outPath)
             {
@@ -678,8 +681,8 @@ namespace Cocos2Unity
                             var projectInfo = new ProjectInfo();
                             projectInfo.projectPath = Path.GetDirectoryName(f.FullName);
                             projectInfo.projectName = Path.GetFileName(projectInfo.projectPath);
-                            projectInfo.cocosstudioPath = projectInfo.projectPath + "\\cocosstudio\\";
-                            projectInfo.resPath = projectInfo.projectPath + "\\res\\";
+                            projectInfo.srcResPath = projectInfo.projectPath + "\\" + RelativeSrcResPath + "\\";
+                            projectInfo.expResPath = projectInfo.projectPath + "\\" + RelativeExpResPath + "\\";
                             projectInfo.findPath = path.Replace(projectInfo.projectPath + "\\", "");
                             Projects.Add(projectInfo);
                             found = true;
@@ -696,9 +699,9 @@ namespace Cocos2Unity
                             var projectInfo = new ProjectInfo();
                             projectInfo.projectPath = Path.GetDirectoryName(f.FullName);
                             projectInfo.projectName = Path.GetFileName(projectInfo.projectPath);
-                            projectInfo.cocosstudioPath = projectInfo.projectPath + "\\cocosstudio\\";
-                            projectInfo.resPath = projectInfo.projectPath + "\\res\\";
-                            projectInfo.findPath = "cocosstudio";
+                            projectInfo.srcResPath = projectInfo.projectPath + "\\" + RelativeSrcResPath + "\\";
+                            projectInfo.expResPath = projectInfo.projectPath + "\\" + RelativeExpResPath + "\\";
+                            projectInfo.findPath = RelativeSrcResPath;
                             Projects.Add(projectInfo);
                         }
                     });
@@ -719,13 +722,13 @@ namespace Cocos2Unity
                 Debug.Log($"PROCESS PROJECT {project.projectName}");
                 var findPath = project.projectPath + "\\" + project.findPath;
                 TarConvertor convertor = new TarConvertor();
-                convertor.SetRootPath(project.cocosstudioPath, new string[] { project.resPath, });
+                convertor.SetRootPath(project.srcResPath, new string[] { project.expResPath, });
                 convertor.SetMapPath(FileSystem.GetFolderPath(findPath), OutFolder + "\\" + project.projectName);
                 FileSystem.EnumPath(findPath, f =>
                 {
                     if (!FileSystem.IsFolder(f) && f.Extension.ToLower() == ".csd")
                     {
-                        var csdresname = f.FullName.Replace(project.cocosstudioPath, "");
+                        var csdresname = f.FullName.Replace(project.srcResPath, "");
                         if (!convertor.IsConverted(csdresname))
                         {
                             convertor.Convert(csdresname);
