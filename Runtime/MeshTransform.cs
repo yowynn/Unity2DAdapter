@@ -139,12 +139,20 @@ namespace Cocos2Unity.Runtime
         protected override void OnDidApplyAnimationProperties()
         {
             SyncInheritColor();
+            if (graphic != null)
+            {
+                graphic.SetVerticesDirty();
+            }
         }
 
 #if UNITY_EDITOR
         protected override void OnValidate()
         {
             SyncInheritColor();
+            if (graphic != null)
+            {
+                graphic.SetVerticesDirty();
+            }
         }
     }
 #endif

@@ -568,10 +568,10 @@ namespace Cocos2Unity
         public string ActionTag;                                // 动画标签
         public List<CsdFrame<CsdBool>> isActive;                // 是否显示 / 激活
         public List<CsdFrame<CsdVector3>> Position;             // 位置
-        public List<CsdFrame<CsdVector3>> Rotation;             // 旋转
+        public List<CsdFrame<CsdVector3>> RotationSkew;             // 旋转
         public List<CsdFrame<CsdVector3>> Scale;                // 缩放
         public List<CsdFrame<CsdVector3>> Pivot;                // 中心点位置
-        public List<CsdFrame<CsdFileLink>> Image;               // 链接图片
+        public List<CsdFrame<CsdFileLink>> FillImage;               // 链接图片
         public List<CsdFrame<CsdFloat>> Color_Alpha;            // 链接颜色（仅 Alpha）
 
         public CsdTimeline Parse(XmlElement e)
@@ -598,8 +598,8 @@ namespace Cocos2Unity
                     isActive = ParseFrameList<CsdBool>(e, FrameScale);
                     break;
                 case "RotationSkew":
-                    Rotation = ParseFrameList<CsdVector3>(e, FrameScale);
-                    foreach(var f in Rotation)
+                    RotationSkew = ParseFrameList<CsdVector3>(e, FrameScale);
+                    foreach(var f in RotationSkew)
                     {
                         var RotationSkew = f.Value;
                         var deltaSkew = RotationSkew.X - RotationSkew.Y > 0 ? RotationSkew.X - RotationSkew.Y : RotationSkew.Y - RotationSkew.X;
@@ -612,7 +612,7 @@ namespace Cocos2Unity
                     }
                     break;
                 case "FileData":
-                    Image = ParseFrameList<CsdFileLink>(e, FrameScale);
+                    FillImage = ParseFrameList<CsdFileLink>(e, FrameScale);
                     break;
                 case "Alpha":
                     Color_Alpha = ParseFrameList<CsdFloat>(e, FrameScale);
@@ -708,6 +708,9 @@ namespace Cocos2Unity
                 ParseObjectData(content["ObjectData"]);
                 ParseAnimation(content["Animation"], out var FrameScale);
                 ParseAnimationList(content["AnimationList"], FrameScale);
+
+                // 把时间轴的第一帧覆盖到原始节点数据
+                ReplaceOriginNodeDataWithFirstFrame();
             }
             return this;
         }
@@ -748,6 +751,51 @@ namespace Cocos2Unity
                     Animations.Add(info.Name, info);
                 }
             }
+        }
+
+        private void ReplaceOriginNodeDataWithFirstFrame()
+        {
+            if (Timelines != null)
+            {
+               foreach(var pair in Timelines)
+               {
+                    var node = FindNodeByActionTag(pair.Key);
+                    if (node != null)
+                    {
+                        var timeline = pair.Value;
+                        if (timeline.Position != null) node.Position = timeline.Position[0].Value;
+                        if (timeline.Scale != null) node.Scale = timeline.Scale[0].Value;
+                        if (timeline.isActive != null) node.isActive = timeline.isActive[0].Value;
+                        if (timeline.RotationSkew != null) node.RotationSkew = timeline.RotationSkew[0].Value;
+                        if (timeline.FillImage != null) node.FillImage = timeline.FillImage[0].Value;
+                        if (timeline.Color_Alpha != null) node.Color.A = timeline.Color_Alpha[0].Value;
+                    }
+                }
+            }
+        }
+
+        public CsdNode FindNodeByActionTag(string actionTag, CsdNode from = null)
+        {
+            from = from ?? Node;
+            if (from != null)
+            {
+                if (from.ActionTag == actionTag)
+                {
+                    return from;
+                }
+                else if (from.Children != null)
+                {
+                    foreach(CsdNode child in from.Children)
+                    {
+                        var found = FindNodeByActionTag(actionTag, child);
+                        if (found != null)
+                        {
+                            return found;
+                        }
+                    }
+                }
+            }
+            return null;
         }
     }
 }

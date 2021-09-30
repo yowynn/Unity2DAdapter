@@ -172,17 +172,17 @@ namespace Cocos2Unity
                 AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_AnchoredPosition.x"), getFloatCurve(timeline.Position, val => GetAnchoredPosition(go, val).x));
                 AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_AnchoredPosition.y"), getFloatCurve(timeline.Position, val => GetAnchoredPosition(go, val).y));
             }
-            if (timeline.Rotation != null)
+            if (timeline.RotationSkew != null)
             {
-                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.x"), getFloatCurve(timeline.Rotation, val => Quaternion.Euler(0, 0, -val.X).x));
-                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.y"), getFloatCurve(timeline.Rotation, val => Quaternion.Euler(0, 0, -val.X).y));
-                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.z"), getFloatCurve(timeline.Rotation, val => Quaternion.Euler(0, 0, -val.X).z));
-                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.w"), getFloatCurve(timeline.Rotation, val => Quaternion.Euler(0, 0, -val.X).w));
+                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.x"), getFloatCurve(timeline.RotationSkew, val => Quaternion.Euler(0, 0, -val.X).x));
+                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.y"), getFloatCurve(timeline.RotationSkew, val => Quaternion.Euler(0, 0, -val.X).y));
+                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.z"), getFloatCurve(timeline.RotationSkew, val => Quaternion.Euler(0, 0, -val.X).z));
+                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.w"), getFloatCurve(timeline.RotationSkew, val => Quaternion.Euler(0, 0, -val.X).w));
                 if (!go.TryGetComponent<Cocos2Unity.Runtime.MeshTransform>(out var mt))
                 {
                     mt = go.AddComponent<Cocos2Unity.Runtime.MeshTransform>();
                 }
-                AnimationUtility.SetEditorCurve(clip, GetBinding<Cocos2Unity.Runtime.MeshTransform>("m_Skew.y"), getFloatCurve(timeline.Rotation, val => val.Y - val.X));
+                AnimationUtility.SetEditorCurve(clip, GetBinding<Cocos2Unity.Runtime.MeshTransform>("m_Skew.y"), getFloatCurve(timeline.RotationSkew, val => val.Y - val.X));
             }
             if (timeline.Scale != null)
             {
@@ -194,9 +194,9 @@ namespace Cocos2Unity
                 AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_Pivot.x"), getFloatCurve(timeline.Pivot, val => val.X));
                 AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_Pivot.y"), getFloatCurve(timeline.Pivot, val => val.Y));
             }
-            if (timeline.Image != null)
+            if (timeline.FillImage != null)
             {
-                AnimationUtility.SetObjectReferenceCurve(clip, GetBinding<Image>("m_Sprite"), getObjectCurve(timeline.Image, val => GetSprite(val).sprite));
+                AnimationUtility.SetObjectReferenceCurve(clip, GetBinding<Image>("m_Sprite"), getObjectCurve(timeline.FillImage, val => GetSprite(val).sprite));
                 // TODO what if the sprite is rotated?
             }
             if (timeline.Color_Alpha != null)
