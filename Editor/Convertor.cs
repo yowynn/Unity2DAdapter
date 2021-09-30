@@ -112,6 +112,8 @@ namespace Cocos2Unity
                 if (parser.Timelines != null)
                 {
                     var mainClip = ConvertTimelines(parser.Timelines, root, ref map);
+                    RemoveRedundantCurves(mainClip, root);      // 去除冗余轨道
+                    RemoveRedundantKeyFrames(mainClip);         // 去除冗余关键帧
                     var clipPath = TryGetOutPath(csdpath, ".anim");
                     AssetDatabase.CreateAsset(mainClip, clipPath);
                     var controllerPath = TryGetOutPath(csdpath, ".controller");
@@ -262,7 +264,7 @@ namespace Cocos2Unity
                     newkeys.Add(new Keyframe(endTime, val));
                 }
                 var newcurve = new AnimationCurve(newkeys.ToArray());
-                newclip.SetCurve(binding.path, binding.type, binding.propertyName, newcurve);
+                AnimationUtility.SetEditorCurve(newclip, binding, newcurve);
             }
 
             var obindings = AnimationUtility.GetObjectReferenceCurveBindings(clip);
@@ -303,7 +305,7 @@ namespace Cocos2Unity
                     newkey.value = endKey.value;
                     newkeys.Add(newkey);
                 }
-                UnityEditor.AnimationUtility.SetObjectReferenceCurve(newclip, binding, newkeys.ToArray());
+                AnimationUtility.SetObjectReferenceCurve(newclip, binding, newkeys.ToArray());
             }
             return newclip;
         }
@@ -319,6 +321,122 @@ namespace Cocos2Unity
         private string GetGameObjectPath(GameObject go, GameObject root)
         {
             return AnimationUtility.CalculateTransformPath(go.transform, root.transform);
+        }
+
+        private int RemoveRedundantCurves(AnimationClip clip, GameObject linked)
+        {
+            var allCount = 0;
+            var redundantCount = 0;
+            var bindings = AnimationUtility.GetCurveBindings(clip);
+            foreach (var binding in bindings)
+            {
+                var keys = AnimationUtility.GetEditorCurve(clip, binding).keys;
+                bool isRedundant = true;
+                float constVal = keys.Length > 0 ? keys[0].value : default;
+                foreach (var key in keys)
+                {
+                    if (key.value != constVal)
+                    {
+                        isRedundant = false;
+                        break;
+                    }
+                }
+                // if (isRedundant)
+                // {
+                //     float linkedValue = TODO_GetBindingValueFloat(linked, binding);
+                //     if (linkedValue != constVal)
+                //     {
+                //         isRedundant = false;
+                //     }
+                // }
+                if (isRedundant)
+                {
+                    AnimationUtility.SetEditorCurve(clip, binding, null);
+                    // Debug.Log($"RedundantCurve: {binding.path}  {binding.type} {binding.propertyName}");
+                    redundantCount++;
+                }
+                allCount++;
+            }
+
+            var obindings = AnimationUtility.GetObjectReferenceCurveBindings(clip);
+            foreach (var binding in obindings)
+            {
+                var keys = AnimationUtility.GetObjectReferenceCurve(clip, binding);
+                bool isRedundant = true;
+                var constVal = keys.Length > 0 ? keys[0].value : default;
+                foreach (var key in keys)
+                {
+                    if (key.value != constVal)
+                    {
+                        isRedundant = false;
+                        break;
+                    }
+                }
+                // if (isRedundant)
+                // {
+                //     var linkedValue = TODO_GetBindingValueObject(linked, binding);
+                //     if (linkedValue != constVal)
+                //     {
+                //         isRedundant = false;
+                //     }
+                // }
+                if (isRedundant)
+                {
+                    AnimationUtility.SetObjectReferenceCurve(clip, binding, null);
+                    // Debug.Log($"RedundantCurve: {binding.path}  {binding.type} {binding.propertyName}");
+                    redundantCount++;
+                }
+                allCount++;
+            }
+            Debug.Log($"RedundantCurveCount: {redundantCount} / {allCount}");
+            return redundantCount;
+        }
+
+        private int RemoveRedundantKeyFrames(AnimationClip clip)
+        {
+            var allCount = 0;
+            var redundantCount = 0;
+            var bindings = AnimationUtility.GetCurveBindings(clip);
+            foreach (var binding in bindings)
+            {
+                var keys = AnimationUtility.GetEditorCurve(clip, binding).keys;
+                var list = new List<Keyframe>(keys);
+                for (int i = list.Count - 2; i > 0; i--)
+                {
+                    var key = list[i];
+                    if (key.value == keys[i - 1].value && key.value == keys[i + 1].value)
+                    {
+                        list.RemoveAt(i);
+                    }
+                }
+                var newkeys = list.ToArray();
+                allCount += keys.Length;
+                redundantCount += keys.Length - newkeys.Length;
+                var newcurve = new AnimationCurve(newkeys);
+                AnimationUtility.SetEditorCurve(clip, binding, newcurve);
+            }
+
+            var obindings = AnimationUtility.GetObjectReferenceCurveBindings(clip);
+            foreach (var binding in obindings)
+            {
+                var keys = AnimationUtility.GetObjectReferenceCurve(clip, binding);
+                var list = new List<ObjectReferenceKeyframe>(keys);
+                for (int i = list.Count - 2; i > 0; i--)
+                {
+                    var key = list[i];
+                    if (key.value == keys[i - 1].value && key.value == keys[i + 1].value)
+                    {
+                        list.RemoveAt(i);
+                    }
+                }
+
+                var newkeys = list.ToArray();
+                allCount += keys.Length;
+                redundantCount += keys.Length - newkeys.Length;
+                AnimationUtility.SetObjectReferenceCurve(clip, binding, newkeys);
+            }
+            Debug.Log($"RedundantKeyFrameCount: {redundantCount} / {allCount}");
+            return redundantCount;
         }
 
         public bool IsConverted(string respath)
