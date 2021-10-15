@@ -590,6 +590,12 @@ namespace Cocos2Unity
                     break;
                 case "Scale":
                     Scale = ParseFrameList<CsdVector3>(e, FrameScale);
+                    //! Z is allways 1!
+                    foreach (var f in Scale)
+                    {
+                        var Scale = f.Value;
+                        Scale.Z = 1;
+                    }
                     break;
                 case "AnchorPoint":
                     Pivot = ParseFrameList<CsdVector3>(e, FrameScale);
