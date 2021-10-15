@@ -19,6 +19,7 @@ namespace Cocos2Unity
         }
 
         public static System.Random Random = new System.Random();
+        private Dictionary<string, int> ConvertedList = new Dictionary<string, int>();
         public string ProjectPath;
         public List<string> ResPath;
         public string InFolder;
@@ -156,7 +157,9 @@ namespace Cocos2Unity
                 {
                     CsdType.LogNonAccessKey(csdpath + "#ERROR:" + e.Message, "Count");
                 }
+                return;
             }
+            MarkConverted(csdpath);
             Debug.Log($"PROCESS CSDFILE END {csdpath}");
         }
 
@@ -441,17 +444,36 @@ namespace Cocos2Unity
 
         public bool IsConverted(string respath)
         {
+            var OVERMODE = true;
             respath = respath.Replace('\\', '/');
-            var prefabPath = TryGetOutPath(respath, ".prefab");
-            GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-            if (prefab == null)
+            if (OVERMODE)
             {
-                return false;
+                return ConvertedList.TryGetValue(respath, out var _);
             }
             else
             {
-                return true;
+                var prefabPath = TryGetOutPath(respath, ".prefab");
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
+                if (prefab == null)
+                {
+                    return false;
+                }
+                else
+                {
+                    return true;
+                }
             }
+        }
+
+        public int MarkConverted(string respath)
+        {
+            respath = respath.Replace('\\', '/');
+            if(!ConvertedList.TryGetValue(respath, out var count))
+            {
+                count = 0;
+            }
+            ConvertedList[respath] = ++count;
+            return count;
         }
 
         private string TryGetFullResPath(string respath)
@@ -639,6 +661,7 @@ namespace Cocos2Unity
                     }
                 }
             }
+            MarkConverted(plist);
             return spriteMap;
         }
 
@@ -692,6 +715,7 @@ namespace Cocos2Unity
                     Debug.Log($"ERROR: sprite not find: {path}");
                 }
             }
+            MarkConverted(path);
             return convertedSprite;
         }
 
@@ -723,6 +747,10 @@ namespace Cocos2Unity
                 if (!IsConverted(csdFile))
                 {
                     Convert(csdFile);
+                }
+                else
+                {
+                    MarkConverted(csdFile);
                 }
                 var prefabPath = TryGetOutPath(csdFile, ".prefab");
                 GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
@@ -850,6 +878,10 @@ namespace Cocos2Unity
                         if (!convertor.IsConverted(csdresname))
                         {
                             convertor.Convert(csdresname);
+                        }
+                        else
+                        {
+                            convertor.MarkConverted(csdresname);
                         }
                     }
                 });
