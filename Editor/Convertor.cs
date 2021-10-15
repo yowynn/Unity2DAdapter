@@ -444,25 +444,8 @@ namespace Cocos2Unity
 
         public bool IsConverted(string respath)
         {
-            var OVERMODE = true;
             respath = respath.Replace('\\', '/');
-            if (OVERMODE)
-            {
-                return ConvertedList.TryGetValue(respath, out var _);
-            }
-            else
-            {
-                var prefabPath = TryGetOutPath(respath, ".prefab");
-                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(prefabPath);
-                if (prefab == null)
-                {
-                    return false;
-                }
-                else
-                {
-                    return true;
-                }
-            }
+            return ConvertedList.TryGetValue(respath, out var _);
         }
 
         public int MarkConverted(string respath)
@@ -882,6 +865,18 @@ namespace Cocos2Unity
                         else
                         {
                             convertor.MarkConverted(csdresname);
+                        }
+                    }
+                    if (!FileSystem.IsFolder(f) && f.Extension.ToLower() == ".plist")
+                    {
+                        var plistresname = f.FullName.Replace(project.expResPath, "");
+                        if (!convertor.IsConverted(plistresname))
+                        {
+                            convertor.ImportPlist(plistresname);
+                        }
+                        else
+                        {
+                            convertor.MarkConverted(plistresname);
                         }
                     }
                 });
