@@ -692,6 +692,8 @@ namespace Cocos2Unity
         public Dictionary<string, CsdAnimInfo> Animations;
         public string DefaultAnimation = "";
 
+        public int FrameRate = 60;
+
         public CsdParser()
         {
 
@@ -737,6 +739,7 @@ namespace Cocos2Unity
             }
             var Duration = GetIntegerAttribute(Animation, "Duration");
             var Speed = GetFloatAttribute(Animation, "Speed");
+            FrameRate = (int)(Speed * 60 + 0.5f);
             FrameScale = 1f / (Speed * 60);
 
             DefaultAnimation = GetStringAttribute(Animation, "ActivedAnimationName", "");

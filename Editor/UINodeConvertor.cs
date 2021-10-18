@@ -9,10 +9,10 @@ namespace Cocos2Unity
 {
     public class UINodeConvertor : Convertor
     {
-        protected override GameObject CreateGameObject(CsdNode node, GameObject parent = null)
+        protected override GameObject CreateNode(CsdNode node, GameObject parent = null)
         {
             // ! do not change the order!!
-            var go = CreateFromPrefab(node.FillNode);
+            var go = GetSubnode(node.FillNode);
             if (!go.TryGetComponent<RectTransform>(out var rt))
                 rt = go.AddComponent<RectTransform>();
             if (parent != null)
@@ -67,7 +67,6 @@ namespace Cocos2Unity
             rt.anchorMin = new Vector2(val.X, val.Y);
             rt.anchorMax = new Vector2(val.X, val.Y);
         };
-        private Action<GameObject, CsdVector3> ConvertCanvasGameObject_AnchorMax = (go, val) => go.GetComponent<RectTransform>().anchorMax = new Vector2(val.X, val.Y);
         private void ConvertCanvasGameObject_Image(GameObject go, CsdFileLink val) { if (val != null) LoadCanvasImage(go, val); }
         private void ConvertCanvasGameObject_Color(GameObject go, CsdColor val) { if (val != null) SetCanvasNodeColor(go, val); }
         private void ConvertCanvasGameObject_isInteractive(GameObject go, bool val) { SetCanvasImageInteractive(go, val); }
@@ -83,7 +82,7 @@ namespace Cocos2Unity
                 image.color = new Color(color.R, color.G, color.B, color.A);
             }
         }
-        private void ConvertCanvasGameObject_Children(GameObject go, List<CsdNode> val) { if (val != null) foreach (var child in val) CreateGameObject(child, go); }
+        private void ConvertCanvasGameObject_Children(GameObject go, List<CsdNode> val) { if (val != null) foreach (var child in val) CreateNode(child, go); }
 
         private static Vector2 GetAnchoredPosition(GameObject go, CsdVector3 position)
         {
@@ -167,7 +166,7 @@ namespace Cocos2Unity
             image.raycastTarget = isInteractive;
         }
 
-        protected override void BindAnimationCurve(AnimationClip clip, GameObject go, string relativePath, CsdTimeline timeline)
+        protected override void BindAnimationCurves(AnimationClip clip, GameObject go, string relativePath, CsdTimeline timeline)
         {
             EditorCurveBinding GetBinding<T>(string propertyName)
             {
@@ -185,11 +184,6 @@ namespace Cocos2Unity
             }
             if (timeline.RotationSkew != null)
             {
-                // AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.x"), getFloatCurve(timeline.RotationSkew, val => Quaternion.Euler(0, 0, -val.X).x));
-                // AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.y"), getFloatCurve(timeline.RotationSkew, val => Quaternion.Euler(0, 0, -val.X).y));
-                // AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.z"), getFloatCurve(timeline.RotationSkew, val => Quaternion.Euler(0, 0, -val.X).z));
-                // AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.w"), getFloatCurve(timeline.RotationSkew, val => Quaternion.Euler(0, 0, -val.X).w));
-
                 bool hasSkew = false;
                 AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.x"), getFloatCurve(timeline.RotationSkew, val =>
                 {
