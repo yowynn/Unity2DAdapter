@@ -640,6 +640,17 @@ namespace Cocos2Unity
                 Frame.FrameScale = FrameScale;
                 Frames.Add(Frame);
             }
+            if (Frames.Count > 1)
+            {
+                for (int i = Frames.Count - 2; i >= 0; --i)
+                {
+                    if (Frames[i].FrameIndex == Frames[i + 1].FrameIndex - 1)
+                    {
+                        Frames[i].Type = CsdCurveType.Constant;
+                        Frames[i].Bezier = CubicBezier.Constant;
+                    }
+                }
+            }
             return Frames;
         }
 
