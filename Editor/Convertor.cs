@@ -5,6 +5,7 @@ using UnityEngine;
 using UnityEditor;
 using UnityEditor.Animations;
 using Wynncs.Util;
+using System.Linq;
 
 namespace Cocos2Unity
 {
@@ -145,6 +146,7 @@ namespace Cocos2Unity
             else
             {
                 var csd = prefabData.Path;
+                Debug.Log($"PROCESS SUB : {csd}");
                 GameObject prefab = ConvertCsd(csd, false);
                 if (prefab)
                 {
@@ -235,6 +237,7 @@ namespace Cocos2Unity
                         BindAnimationCurves(clip, go, path, Timeline);
                     }
                 }
+                clip.EnsureQuaternionContinuity();
             }
             return clip;
         }
@@ -362,6 +365,7 @@ namespace Cocos2Unity
         {
             var allCount = 0;
             var redundantCount = 0;
+            var markedRedundant = new Dictionary<EditorCurveBinding, bool>();
             var bindings = AnimationUtility.GetCurveBindings(clip);
             foreach (var binding in bindings)
             {
@@ -376,13 +380,48 @@ namespace Cocos2Unity
                         break;
                     }
                 }
-                if (isRedundant)
+                // if (isRedundant)
+                // {
+                //     AnimationUtility.SetEditorCurve(clip, binding, null);
+                //     // Debug.Log($"RedundantCurve: {binding.path}  {binding.type} {binding.propertyName}");
+                //     redundantCount++;
+                // }
+                markedRedundant[binding] = isRedundant;
+                allCount++;
+            }
+            Func<string, string> getPre = p =>
+            {
+                var i = p.LastIndexOf('.');
+                if (i == -1)
+                    return p;
+                else
+                    return p.Substring(0, i + 1);
+            };
+            Func<IEnumerable<EditorCurveBinding>, int> GetUsed = list =>
+            {
+                int count = 0;
+                foreach (var item in list)
+                {
+                    if (markedRedundant[item] == false)
+                    {
+                        ++count;
+                    }
+                }
+                return count;
+            };
+
+            var Redundants =
+                from binding in bindings
+                group binding by new { binding.path, binding.type, propertyPrev = getPre(binding.propertyName) } into Group
+                where GetUsed(Group) == 0
+                select Group;
+            foreach(var group in Redundants)
+            {
+                foreach(var binding in group)
                 {
                     AnimationUtility.SetEditorCurve(clip, binding, null);
-                    // Debug.Log($"RedundantCurve: {binding.path}  {binding.type} {binding.propertyName}");
                     redundantCount++;
                 }
-                allCount++;
             }
 
             var obindings = AnimationUtility.GetObjectReferenceCurveBindings(clip);
@@ -478,7 +517,7 @@ namespace Cocos2Unity
                 // save controller and clips
                 if (parser.Timelines != null)
                 {
-                    var mainClip = ConvertTimelines(parser.Timelines, root, ref map);
+                    var mainClip = ConvertTimelines(parser.Timelines, root, ref map, parser.FrameRate);
                     RemoveRedundantCurves(mainClip, root);      // 去除冗余轨道
                     RemoveRedundantKeyFrames(mainClip);         // 去除冗余关键帧
                     var clipPath = TryGetOutPath(csdpath, ".anim");

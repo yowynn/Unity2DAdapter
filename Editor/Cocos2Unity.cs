@@ -62,7 +62,7 @@ namespace Cocos2Unity
                         projectInfo.projectName = Path.GetFileName(projectInfo.projectPath);
                         projectInfo.srcResPath = projectInfo.projectPath + "\\" + RelativeSrcResPath + "\\";
                         projectInfo.expResPath = projectInfo.projectPath + "\\" + RelativeExpResPath + "\\";
-                        CreateImportFileList(projectInfo, path.Replace(projectInfo.projectPath + "\\", ""));
+                        CreateImportFileList(ref projectInfo, path.Replace(projectInfo.srcResPath, ""));
                         Projects.Add(projectInfo);
                         found = true;
                     }
@@ -82,7 +82,7 @@ namespace Cocos2Unity
                         projectInfo.projectName = Path.GetFileName(projectInfo.projectPath);
                         projectInfo.srcResPath = projectInfo.projectPath + "\\" + RelativeSrcResPath + "\\";
                         projectInfo.expResPath = projectInfo.projectPath + "\\" + RelativeExpResPath + "\\";
-                        CreateImportFileList(projectInfo);
+                        CreateImportFileList(ref projectInfo);
                         Projects.Add(projectInfo);
                     }
                 });
@@ -109,17 +109,18 @@ namespace Cocos2Unity
             return null;
         }
 
-        private void CreateImportFileList(ProjectInfo project, string findPath = null)
+        private void CreateImportFileList(ref ProjectInfo project, string findPath = null)
         {
-            project.csdFiles = new List<string>();
-            project.csiFiles = new List<string>();
+            var rootPath = project.srcResPath;
+            var csdFiles = new List<string>();
+            var csiFiles = new List<string>();
             if (findPath == null)
             {
                 findPath = project.srcResPath;
             }
             else
             {
-                findPath = project.srcResPath + "\\" + findPath;
+                findPath = project.srcResPath + findPath;
             }
             FileSystem.EnumPath(findPath, f =>
             {
@@ -127,16 +128,18 @@ namespace Cocos2Unity
                 {
                     if (f.Extension.ToLower() == ".csd" && isConvertCSD)
                     {
-                        var csdFileName = f.FullName.Replace(project.srcResPath, "").Replace('\\', '/');
-                        project.csdFiles.Add(csdFileName);
+                        var csdFileName = f.FullName.Replace(rootPath, "").Replace('\\', '/');
+                        csdFiles.Add(csdFileName);
                     }
                     if (f.Extension.ToLower() == ".csi" && isConvertCSI)
                     {
-                        var csiFileName = f.FullName.Replace(project.srcResPath, "").Replace('\\', '/');
-                        project.csiFiles.Add(csiFileName);
+                        var csiFileName = f.FullName.Replace(rootPath, "").Replace('\\', '/');
+                        csiFiles.Add(csiFileName);
                     }
                 }
             });
+            project.csdFiles = csdFiles;
+            project.csiFiles = csiFiles;
         }
 
         private void ConvertorProject(ProjectInfo project)

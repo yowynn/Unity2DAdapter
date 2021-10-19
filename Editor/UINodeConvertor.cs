@@ -184,30 +184,27 @@ namespace Cocos2Unity
             }
             if (timeline.RotationSkew != null)
             {
+                // use "localEulerAnglesRaw.x" to set "Euler Angles" Mode
+                // use "localEulerAnglesBaked.x" to set "Euler Angles (Quaternion)" Mode
+                // use "localEulerAngles.x" to set "Quaternion" Mode
                 bool hasSkew = false;
-                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.x"), getFloatCurve(timeline.RotationSkew, val =>
+                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("localEulerAnglesRaw.x"), getFloatCurve(timeline.RotationSkew, val =>
                 {
                     var sep = SeparateRotationAndSkew(val);
                     hasSkew = hasSkew || sep.Skew != Vector2.zero;
-                    return Quaternion.Euler(sep.Rotation).x;
+                    return sep.Rotation.x;
                 }));
-                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.y"), getFloatCurve(timeline.RotationSkew, val =>
+                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("localEulerAnglesRaw.y"), getFloatCurve(timeline.RotationSkew, val =>
                 {
                     var sep = SeparateRotationAndSkew(val);
                     hasSkew = hasSkew || sep.Skew != Vector2.zero;
-                    return Quaternion.Euler(sep.Rotation).y;
+                    return sep.Rotation.y;
                 }));
-                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.z"), getFloatCurve(timeline.RotationSkew, val =>
+                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("localEulerAnglesRaw.z"), getFloatCurve(timeline.RotationSkew, val =>
                 {
                     var sep = SeparateRotationAndSkew(val);
                     hasSkew = hasSkew || sep.Skew != Vector2.zero;
-                    return Quaternion.Euler(sep.Rotation).z;
-                }));
-                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalRotation.w"), getFloatCurve(timeline.RotationSkew, val =>
-                {
-                    var sep = SeparateRotationAndSkew(val);
-                    hasSkew = hasSkew || sep.Skew != Vector2.zero;
-                    return Quaternion.Euler(sep.Rotation).w;
+                    return sep.Rotation.z;
                 }));
                 if (hasSkew)
                 {
@@ -223,6 +220,7 @@ namespace Cocos2Unity
             {
                 AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalScale.x"), getFloatCurve(timeline.Scale, val => val.X));
                 AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalScale.y"), getFloatCurve(timeline.Scale, val => val.Y));
+                AnimationUtility.SetEditorCurve(clip, GetBinding<RectTransform>("m_LocalScale.z"), getFloatCurve(timeline.Scale, val => val.Z));
             }
             if (timeline.Pivot != null)
             {
