@@ -5,7 +5,7 @@ using Wynncs.Util;
 
 namespace Cocos2Unity
 {
-public class Csd2UnityPrefab : ScriptableWizard
+    public class Csd2UnityPrefab : ScriptableWizard
     {
         [SerializeField, Tooltip("The FULL Path Import From - can be a file path or a project folder path")]
         public string InputPath = @"C:\Users\Wynn\Desktop\book\story_0036\cocosstudio\scenes\story\0036\content\layout\page_1\s0036_h001_siren.csd";
