@@ -23,7 +23,7 @@
 
 using System;
 
-namespace Wynncs.Entry
+namespace Cocos2Unity.Models
 {
     public struct CubicBezier
     {

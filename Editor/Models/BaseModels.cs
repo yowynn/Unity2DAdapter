@@ -1,9 +1,8 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
-using Wynncs.Entry;
 
-namespace Cocos2Unity
+namespace Cocos2Unity.Models
 {
     public abstract class ModBase
     {
@@ -273,8 +272,8 @@ namespace Cocos2Unity
 
         public ModType Type { get => type; set => type = value; }
         public ModColorVector Color { get => (ModColorVector)filler; set => filler = value; }
-        public ModLink Node { get => (ModLink)filler; set => filler = value; }
         public ModLink Sprite { get => (ModLink)filler; set => filler = value; }
+        public ModLink Node { get => (ModLink)filler; set => filler = value; }
 
         public ModFiller(ModType type, object filler = null)
         {
@@ -341,7 +340,7 @@ namespace Cocos2Unity
         public ModType Value { get => value; set => this.value = value; }
         public int Index { get => (int)(time * frameRate + 0.5); set => time = value / frameRate; }
         public CubicBezier Transition { get => transition; set => transition = value; }
-        public float FrameRate { get => frameRate; set { time = time * frameRate / value; frameRate = value; } }
+        public float FrameRate { get => frameRate; private set => frameRate = value; }
         public ModFrame(float time, ModType value, float frameRate = 60f)
         {
             FrameRate = frameRate;
@@ -356,28 +355,47 @@ namespace Cocos2Unity
         }
     }
 
-    public class ModCurve<ModType> : ModBase where ModType : ModBase
+    public interface IModTimeInterval
+    {
+        float Duration { get; }
+    }
+
+    public class ModCurve<ModType> : ModBase, IModTimeInterval where ModType : ModBase
     {
         private float frameRate = 60f;
         private SortedList<float, ModFrame<ModType>> keyFrames;
-        public float FrameRate { get => frameRate; }
+        public float FrameRate { get => frameRate; private set => frameRate = value; }
         public IList<ModFrame<ModType>> KeyFrames{ get => keyFrames.Values; }
+        public float Duration
+        {
+            get
+            {
+                float duration = 0f;
+                foreach (ModFrame<ModType> frame in KeyFrames)
+                {
+                    duration = Math.Max(duration, frame.Time);
+                }
+                return duration;
+            }
+        }
         public ModCurve(float frameRate = 60f)
         {
-            this.frameRate = frameRate;
+            FrameRate = frameRate;
             keyFrames = new SortedList<float, ModFrame<ModType>>();
         }
 
-        public void AddFrame(int frameIndex, ModType value)
+        public ModFrame<ModType> AddFrame(int frameIndex, ModType value)
         {
-            var frame = new ModFrame<ModType>(frameIndex, value, frameRate);
+            var frame = new ModFrame<ModType>(frameIndex, value, FrameRate);
             keyFrames[frame.Index] = frame;
+            return frame;
         }
 
-        public void AddFrame(float time, ModType value)
+        public ModFrame<ModType> AddFrame(float time, ModType value)
         {
-            var frame = new ModFrame<ModType>(time, value, frameRate);
+            var frame = new ModFrame<ModType>(time, value, FrameRate);
             keyFrames[frame.Index] = frame;
+            return frame;
         }
 
         public void RemoveFrame(ModFrame<ModType> frame)
@@ -398,17 +416,35 @@ namespace Cocos2Unity
 
     public class ModTimeline<T> : ModBase where T : IModTimeline
     {
-        public Dictionary<string, object> curves;
+        private float frameRate = 60f;
+        private Dictionary<string, IModTimeInterval> curves;
+        public float FrameRate { get => frameRate; private set => frameRate = value; }
 
-        public ModTimeline()
+        public float Duration
         {
-            curves = new Dictionary<string, object>();
+            get
+            {
+                float duration = 0f;
+                foreach (IModTimeInterval interval in curves.Values)
+                {
+                    duration = Math.Max(duration, interval.Duration);
+                }
+                return duration;
+            }
         }
 
-        public void AddCurve<ModType>(string propertyName, ModCurve<ModType> curve) where ModType : ModBase
+        public ModTimeline(float frameRate = 60f)
         {
-            // TODO check if propertyName and ModType is valid
+            FrameRate = frameRate;
+            curves = new Dictionary<string, IModTimeInterval>();
+        }
+        public ModCurve<ModType> AddCurve<ModType>(string propertyName) where ModType : ModBase
+        {
+            if (curves.ContainsKey(propertyName))
+                return (ModCurve<ModType>)curves[propertyName];
+            var curve = new ModCurve<ModType>(FrameRate);
             curves[propertyName] = curve;
+            return curve;
         }
 
         public void RemoveCurve(string propertyName)
@@ -425,5 +461,9 @@ namespace Cocos2Unity
         {
             return (ModCurve<ModType>)curves[propertyName];
         }
+         public IEnumerable<string> GetPropertyNames()
+         {
+             return curves.Keys;
+         }
     }
 }
