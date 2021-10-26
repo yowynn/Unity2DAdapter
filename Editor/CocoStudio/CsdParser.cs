@@ -24,8 +24,8 @@ namespace Cocos2Unity.CocoStudio
             var AnimationList = Content.GetElement("AnimationList");
             var animatedNodes = new Dictionary<string, ModNode>();
             ModNode node = ParseNode(ObjectData, animatedNodes);
-            ModNodeAnimationAtlas atlas = ParseNodeAnimationAtlas(Animation, animatedNodes);
-            var animationList = ParseAnimationList(AnimationList);
+            ModNodeAnimationAtlas atlas = ParseTimeline(Animation, animatedNodes, out string defaultAnimationName);
+            FillAnimationInfos(AnimationList, atlas);
 
             return TARGET;
         }
@@ -269,7 +269,7 @@ namespace Cocos2Unity.CocoStudio
             return TARGET;
         }
 
-        private static ModNodeAnimationAtlas ParseNodeAnimationAtlas(XmlElement list, Dictionary<string, ModNode> animatedNodes)
+        private static ModNodeAnimationAtlas ParseTimeline(XmlElement list, Dictionary<string, ModNode> animatedNodes, out string defaultAnimation)
         {
             var Speed = list.GetFloatAttribute("Speed", 1f);
             var FrameRate = Speed * 60f;
@@ -284,9 +284,12 @@ namespace Cocos2Unity.CocoStudio
                     timeline = TARGET.AddTimeline(node);
                 }
                 FillTimelineCurve(timeline, Timeline);
-                var Property = Timeline.GetStringAttribute("Property");
             }
-
+            defaultAnimation = list.GetStringAttribute("ActivedAnimationName");
+            if (string.IsNullOrEmpty(defaultAnimation))
+            {
+                defaultAnimation = null;
+            }
             return TARGET;
         }
 
@@ -296,47 +299,35 @@ namespace Cocos2Unity.CocoStudio
             switch (Property)
             {
                 case "Position":
-                    var curve = timeline.AddCurve<ModVector2>("Rect.Position");
-                    Position = ParseFrameList<CsdVector3>(e, FrameScale);
+                    var curvePosition = timeline.AddCurve<ModVector2>("Rect.Position");
+                    FillTimelineCurveFrames(curvePosition, list, e => GetModVector2(e));
                     break;
                 case "Scale":
-                    Scale = ParseFrameList<CsdVector3>(e, FrameScale);
-                    //! Z is allways 1!
-                    foreach (var f in Scale)
-                    {
-                        var Scale = f.Value;
-                        Scale.Z = 1;
-                    }
+                    var curveScale = timeline.AddCurve<ModVector2>("Scale");
+                    FillTimelineCurveFrames(curveScale, list, e => GetModVector2(e));
                     break;
                 case "AnchorPoint":
-                    Pivot = ParseFrameList<CsdVector3>(e, FrameScale);
+                    var curvePivot = timeline.AddCurve<ModVector2>("Pivot");
+                    FillTimelineCurveFrames(curvePivot, list, e => GetModVector2(e));
                     break;
                 case "VisibleForFrame":
-                    isActive = ParseFrameList<CsdBool>(e, FrameScale);
+                    var curveVisible = timeline.AddCurve<ModBoolean>("Visible");
+                    FillTimelineCurveFrames(curveVisible, list, e => e.GetBoolAttribute("Value"));
                     break;
                 case "RotationSkew":
-                    RotationSkew = ParseFrameList<CsdVector3>(e, FrameScale);
-                    foreach (var f in RotationSkew)
-                    {
-                        var RotationSkew = f.Value;
-                        var deltaSkew = RotationSkew.X - RotationSkew.Y > 0 ? RotationSkew.X - RotationSkew.Y : RotationSkew.Y - RotationSkew.X;
-                        if (deltaSkew > 50) LogNonAccessKey("DeltaSkew_Animation", "Step50_");
-                        else if (deltaSkew > 30) LogNonAccessKey("DeltaSkew_Animation", "Step30_50");
-                        else if (deltaSkew > 20) LogNonAccessKey("DeltaSkew_Animation", "Step20_30");
-                        else if (deltaSkew > 10) LogNonAccessKey("DeltaSkew_Animation", "Step10_20");
-                        else if (deltaSkew > 5) LogNonAccessKey("DeltaSkew_Animation", "Step05_10");
-                        else if (deltaSkew > 0) LogNonAccessKey("DeltaSkew_Animation", "Step00_05");
-                    }
+                    var curveSkew = timeline.AddCurve<ModVector2>("Skew");
+                    FillTimelineCurveFrames(curveSkew, list, e => GetModVector2(e));
                     break;
                 case "FileData":
-                    FillImage = ParseFrameList<CsdFileLink>(e, FrameScale);
+                    var curveSprite = timeline.AddCurve<ModLink>("Filler.Sprite");
+                    FillTimelineCurveFrames(curveSprite, list, e => GetModLink(e.GetElement("TextureFile")));
                     break;
                 case "Alpha":
-                    Color_Alpha = ParseFrameList<CsdFloat>(e, FrameScale);
-                    foreach (var frame in Color_Alpha) frame.Value = frame.Value / 255f;
+                    var curveAlpha = timeline.AddCurve<ModSingle>("Color.A");
+                    FillTimelineCurveFrames(curveAlpha, list, e => e.GetIntegerAttribute("Value") / 255f);
                     break;
                 default:
-                    LogNonAccessKey("Animation.Timeline.Property", Property);
+                    XmlAnalyzer.LogNonAccessKey("Animation.Timeline.Property", Property);
                     break;
             }
         }
@@ -352,6 +343,167 @@ namespace Cocos2Unity.CocoStudio
                 if (Tween)
                 {
                     frame.Transition = CubicBezier.Constant;
+                }
+                else
+                {
+                    var EasingData = Frame.GetElement("EasingData");
+                    frame.Transition = ParseTimelineCurveFrameTransition(EasingData);
+                }
+            }
+            // handle neigbour frames as constant
+            var frames = curve.KeyFrames;
+            if (frames.Count > 1)
+            {
+                for (int i = frames.Count - 2; i >= 0; --i)
+                {
+                    if (frames[i].Index == frames[i + 1].Index - 1)
+                    {
+                        frames[i].Transition = CubicBezier.Constant;
+                    }
+                }
+            }
+        }
+
+        private static CubicBezier ParseTimelineCurveFrameTransition(XmlElement data)
+        {
+            if (data == null) return CubicBezier.Linear;
+            var Type = data.GetIntegerAttribute("Type");
+            switch (Type)
+            {
+                case -1:
+                    // Costum
+                    var Points = data.GetElement("Points");
+                    var Point1 = (XmlElement)Points.ChildNodes[1];
+                    var Point2 = (XmlElement)Points.ChildNodes[2];
+                    var X1 = Point1.GetFloatAttribute("X", 0f);
+                    var Y1 = Point1.GetFloatAttribute("Y", 0f);
+                    var X2 = Point2.GetFloatAttribute("X", 0f);
+                    var Y2 = Point2.GetFloatAttribute("Y", 0f);
+                    X1 = Math.Max(X1, 0.0001f);                 // to make sure that the curve has a positive weight
+                    X2 = Math.Min(X2, 0.9999f);                 // to make sure that the curve has a positive weight
+                    return new CubicBezier(X1, Y1, X2, Y2);
+                case 0:
+                    // Linear
+                    return CubicBezier.Linear;
+                case 1:
+                    // EaseInSine
+                    return CubicBezier.EaseInSine;
+                case 2:
+                    // EaseOutSine
+                    return CubicBezier.EaseOutSine;
+                case 3:
+                    // EaseInOutSine
+                    return CubicBezier.EaseInOutSine;
+                case 4:
+                    // EaseInQuad
+                    return CubicBezier.EaseInQuad;
+                case 5:
+                    // EaseOutQuad
+                    return CubicBezier.EaseOutQuad;
+                case 6:
+                    // EaseInOutQuad
+                    return CubicBezier.EaseInOutQuad;
+                case 7:
+                    // EaseInCubic
+                    return CubicBezier.EaseInCubic;
+                case 8:
+                    // EaseOutCubic
+                    return CubicBezier.EaseOutCubic;
+                case 9:
+                    // EaseInOutCubic
+                    return CubicBezier.EaseInOutCubic;
+                case 10:
+                    // EaseInQuart
+                    return CubicBezier.EaseInQuart;
+                case 11:
+                    // EaseOutQuart
+                    return CubicBezier.EaseOutQuart;
+                case 12:
+                    // EaseInOutQuart
+                    return CubicBezier.EaseInOutQuart;
+                case 13:
+                    // EaseInQuint
+                    return CubicBezier.EaseInQuint;
+                case 14:
+                    // EaseOutQuint
+                    return CubicBezier.EaseOutQuint;
+                case 15:
+                    // EaseInOutQuint
+                    return CubicBezier.EaseInOutQuint;
+                case 16:
+                    // EaseInExpo
+                    return CubicBezier.EaseInExpo;
+                case 17:
+                    // EaseOutExpo
+                    return CubicBezier.EaseOutExpo;
+                case 18:
+                    // EaseInOutExpo
+                    return CubicBezier.EaseInOutExpo;
+                case 19:
+                    // EaseInCirc
+                    return CubicBezier.EaseInCirc;
+                case 20:
+                    // EaseOutCirc
+                    return CubicBezier.EaseOutCirc;
+                case 21:
+                    // EaseInOutCirc
+                    return CubicBezier.EaseInOutCirc;
+                case 22:
+                    // EaseInElastic
+                    // return CubicBezier.EaseInElastic;
+                    XmlAnalyzer.LogNonAccessKey("EasingData.Type", "EaseInElastic");
+                    return CubicBezier.Linear;
+
+                case 23:
+                    // EaseOutElastic
+                    // return CubicBezier.EaseOutElastic;
+                    XmlAnalyzer.LogNonAccessKey("EasingData.Type", "EaseOutElastic");
+                    return CubicBezier.Linear;
+                case 24:
+                    // EaseInOutElastic
+                    // return CubicBezier.EaseInOutElastic;
+                    XmlAnalyzer.LogNonAccessKey("EasingData.Type", "EaseInOutElastic");
+                    return CubicBezier.Linear;
+                case 25:
+                    // EaseInBack
+                    return CubicBezier.EaseInBack;
+                case 26:
+                    // EaseOutBack
+                    return CubicBezier.EaseOutBack;
+                case 27:
+                    // EaseInOutBack
+                    return CubicBezier.EaseInOutBack;
+                case 28:
+                    // EaseInBounce
+                    // return CubicBezier.EaseInBounce;
+                    XmlAnalyzer.LogNonAccessKey("EasingData.Type", "EaseInBounce");
+                    return CubicBezier.Linear;
+                case 29:
+                    // EaseOutBounce
+                    // return CubicBezier.EaseOutBounce;
+                    XmlAnalyzer.LogNonAccessKey("EasingData.Type", "EaseOutBounce");
+                    return CubicBezier.Linear;
+                case 30:
+                    // EaseInOutBounce
+                    // return CubicBezier.EaseInOutBounce;
+                    XmlAnalyzer.LogNonAccessKey("EasingData.Type", "EaseInOutBounce");
+                    return CubicBezier.Linear;
+                default:
+                    XmlAnalyzer.LogNonAccessKey("EasingData.Type", Type.ToString());
+                    return CubicBezier.Linear;
+            }
+        }
+
+        private static void FillAnimationInfos(XmlElement list, ModNodeAnimationAtlas atlas)
+        {
+            if (list != null)
+            {
+                foreach (XmlElement info in list)
+                {
+                    var Name = info.GetStringAttribute("Name");
+                    var StartIndex = info.GetIntegerAttribute("StartIndex");
+                    var EndIndex = info.GetIntegerAttribute("EndIndex");
+                    atlas.AddAnimation(Name, StartIndex, EndIndex);
                 }
             }
         }
