@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Reflection;
 
 namespace Cocos2Unity.Models
 {
@@ -245,13 +244,13 @@ namespace Cocos2Unity.Models
         }
     }
 
-    public class ModLink : ModBase
+    public class ModLinkedAsset : ModBase
     {
         private string name;
         private string path;
         public string Name { get => name; set => name = value; }
         public string Path { get => path ?? name; set => path = value; }
-        public ModLink(string name, string path = null)
+        public ModLinkedAsset(string name, string path = null)
         {
             Name = name;
             Path = path;
@@ -272,8 +271,8 @@ namespace Cocos2Unity.Models
 
         public ModType Type { get => type; set => type = value; }
         public ModColorVector Color { get => (ModColorVector)filler; set => filler = value; }
-        public ModLink Sprite { get => (ModLink)filler; set => filler = value; }
-        public ModLink Node { get => (ModLink)filler; set => filler = value; }
+        public ModLinkedAsset Sprite { get => (ModLinkedAsset)filler; set => filler = value; }
+        public ModLinkedAsset Node { get => (ModLinkedAsset)filler; set => filler = value; }
 
         public ModFiller(ModType type, object filler = null)
         {
@@ -286,10 +285,10 @@ namespace Cocos2Unity.Models
                     Color = (ModColorVector)filler;
                     break;
                 case ModType.Sprite:
-                    Sprite = (ModLink)filler;
+                    Sprite = (ModLinkedAsset)filler;
                     break;
                 case ModType.Node:
-                    Node = (ModLink)filler;
+                    Node = (ModLinkedAsset)filler;
                     break;
             }
         }
@@ -321,10 +320,10 @@ namespace Cocos2Unity.Models
                     Color = (ModColorVector)filler;
                     break;
                 case ModType.Sprite:
-                    Sprite = (ModLink)filler;
+                    Sprite = (ModLinkedAsset)filler;
                     break;
                 case ModType.Node:
-                    Node = (ModLink)filler;
+                    Node = (ModLinkedAsset)filler;
                     break;
             }
         }

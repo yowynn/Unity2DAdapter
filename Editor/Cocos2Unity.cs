@@ -110,8 +110,8 @@ namespace Cocos2Unity
         private void CreateImportFileList(ref ProjectInfo project, string findPath = null)
         {
             var rootPath = project.srcResPath;
-            var csdFiles = new List<string>();
-            var csiFiles = new List<string>();
+                var csdFiles = new List<string>();
+                var csiFiles = new List<string>();
             if (findPath == null)
             {
                 findPath = project.srcResPath;

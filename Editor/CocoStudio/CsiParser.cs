@@ -1,12 +1,11 @@
-using System;
 using Cocos2Unity.Models;
 using System.Xml;
 
 namespace Cocos2Unity.CocoStudio
 {
-    public partial class CocoStudioParser
+    public partial class Parser
     {
-        public static SpriteList ParseCsi(string filepath)
+        public static partial SpriteList ParseCsi(string filepath)
         {
             var TARGET = new SpriteList();
             var file = new XmlDocument();
@@ -30,7 +29,7 @@ namespace Cocos2Unity.CocoStudio
                 if (FilePathData != null)
                 {
                     var name = FilePathData.GetStringAttribute("Path");
-                    TARGET.AddSpriteInfo(new ModLink(name));
+                    TARGET.AddSpriteInfo(new ModLinkedAsset(name));
                 }
             }
 

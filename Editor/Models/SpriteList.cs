@@ -8,7 +8,7 @@ namespace Cocos2Unity.Models
         public ModVector2 MaxTextureSize;
         public ModBoolean AllowRotation;
         public ModInt32 SpritePadding;
-        public List<ModLink> SpriteInfos;
+        public List<ModLinkedAsset> LinkedSprites;
 
         public SpriteList()
         {
@@ -16,12 +16,12 @@ namespace Cocos2Unity.Models
             MaxTextureSize = new ModVector2(0, 0);
             AllowRotation = false;
             SpritePadding = 0;
-            SpriteInfos = new List<ModLink>();
+            LinkedSprites = new List<ModLinkedAsset>();
         }
 
-        public void AddSpriteInfo(ModLink spriteInfo)
+        public void AddSpriteInfo(ModLinkedAsset spriteInfo)
         {
-            SpriteInfos.Add(spriteInfo);
+            LinkedSprites.Add(spriteInfo);
         }
     }
 }

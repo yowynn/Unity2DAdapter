@@ -6,7 +6,7 @@ namespace Cocos2Unity.Models
     public class ModNode : IModTimeline
     {
         public string Name;
-        public ModBoolean Visable;
+        public ModBoolean Visible;
         public ModBoolean Interactive;
         public ModRect Rect;
         public ModVector2 Pivot;
@@ -18,11 +18,22 @@ namespace Cocos2Unity.Models
         public List<ModNode> Children;
         public ModNode Parent;
 
+        public string Path
+        {
+            get
+            {
+                if (Parent == null)
+                    return Name;
+                else
+                    return Parent.Path + "/" + Name;
+            }
+        }
+
         public bool IsRoot
         {
             get
             {
-                return this.Parent == null;
+                return Parent == null;
             }
         }
 
@@ -30,43 +41,76 @@ namespace Cocos2Unity.Models
         {
             get
             {
-                return this.Children != null && this.Children.Count > 0;
+                return Children != null && Children.Count > 0;
             }
         }
 
         public ModNode()
         {
-            this.Name = "";
-            this.Visable = true;
-            this.Interactive = true;
-            this.Rect = new ModRect(0, 0, 0, 0);
-            this.Pivot = new ModVector2(0.5f, 0.5f);
-            this.Anchor = new ModRect(0, 0, 0, 0);
-            this.Skew = new ModVector2(0, 0);
-            this.Scale = new ModVector2(1, 1);
-            this.Filler = new ModFiller(ModFiller.ModType.None);
-            this.Color = new ModColor(255, 255, 255, 255);
-            this.Children = new List<ModNode>();
-            this.Parent = null;
+            Name = "";
+            Visible = true;
+            Interactive = true;
+            Rect = new ModRect(0, 0, 0, 0);
+            Pivot = new ModVector2(0.5f, 0.5f);
+            Anchor = new ModRect(0, 0, 0, 0);
+            Skew = new ModVector2(0, 0);
+            Scale = new ModVector2(1, 1);
+            Filler = new ModFiller(ModFiller.ModType.None);
+            Color = new ModColor(255, 255, 255, 255);
+            Children = new List<ModNode>();
+            Parent = null;
         }
 
         public void AddChild(ModNode child)
         {
-            this.Children.Add(child);
+            Children.Add(child);
             child.Parent = this;
         }
 
         public void GetChildrenRecursive(List<ModNode> children)
         {
             children.Add(this);
-            if (this.HasChildren)
+            if (HasChildren)
             {
-                foreach (ModNode child in this.Children)
+                foreach (ModNode child in Children)
                 {
                     child.GetChildrenRecursive(children);
                 }
             }
         }
+
+        public void GetLinkedNodes(Dictionary<string, ModLinkedAsset> linkedNodes)
+        {
+            if (Filler.Type == ModFiller.ModType.Node)
+            {
+                linkedNodes.Add(Path, Filler.Node);
+            }
+
+            if (HasChildren)
+            {
+                foreach (ModNode child in Children)
+                {
+                    child.GetLinkedNodes(linkedNodes);
+                }
+            }
+        }
+
+        public void GetLinkedSprites(Dictionary<string, ModLinkedAsset> linkedSprites)
+        {
+            if (Filler.Type == ModFiller.ModType.Sprite)
+            {
+                linkedSprites.Add(Path, Filler.Sprite);
+            }
+
+            if (HasChildren)
+            {
+                foreach (ModNode child in Children)
+                {
+                    child.GetLinkedNodes(linkedSprites);
+                }
+            }
+        }
+
     }
 
     public class ModNodeAnimationAtlas

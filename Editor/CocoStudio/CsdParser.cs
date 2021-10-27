@@ -5,9 +5,9 @@ using System.Collections.Generic;
 
 namespace Cocos2Unity.CocoStudio
 {
-    public partial class CocoStudioParser
+    public partial class Parser
     {
-        public static NodePackage ParseCsd(string filepath)
+        public static partial NodePackage ParseCsd(string filepath)
         {
             var TARGET = new NodePackage();
             var file = new XmlDocument();
@@ -26,6 +26,9 @@ namespace Cocos2Unity.CocoStudio
             ModNode node = ParseNode(ObjectData, animatedNodes);
             ModNodeAnimationAtlas atlas = ParseTimeline(Animation, animatedNodes, out string defaultAnimationName);
             FillAnimationInfos(AnimationList, atlas);
+            TARGET.Root = node;
+            TARGET.DefaultAnimationName = defaultAnimationName;
+            TARGET.AddAtlas(atlas);
 
             return TARGET;
         }
@@ -53,7 +56,7 @@ namespace Cocos2Unity.CocoStudio
             return new ModColor(R, G, B, A);
         }
 
-        private static ModLink GetModLink(XmlElement node)
+        private static ModLinkedAsset GetModLink(XmlElement node)
         {
             var Path = node.GetStringAttribute("Path");
             var Plist = node.GetStringAttribute("Plist");
@@ -61,15 +64,18 @@ namespace Cocos2Unity.CocoStudio
             {
                 Plist = null;
             }
-            return new ModLink(Path, Plist);
+            return new ModLinkedAsset(Path, Plist);
         }
 
-
-        private static ModNode ParseNode(XmlElement node, Dictionary<string, ModNode> animatedNodes)
+        private static ModNode ParseNode(XmlElement node, Dictionary<string, ModNode> animatedNodes, ModNode parent = null)
         {
             var TARGET = new ModNode();
+            if (parent != null)
+            {
+                parent.AddChild(TARGET);
+            }
             TARGET.Name = node.GetStringAttribute("Name");
-            TARGET.Visable = node.GetBoolAttribute("VisibleForFrame", true);
+            TARGET.Visible = node.GetBoolAttribute("VisibleForFrame", true);
             TARGET.Interactive = node.GetBoolAttribute("TouchEnable", false);
             TARGET.Rect = ParseNodeRect(node);
             TARGET.Pivot = ParseNodePivot(node);
@@ -84,8 +90,7 @@ namespace Cocos2Unity.CocoStudio
             {
                 foreach (XmlElement child in Children)
                 {
-                    var childNode = ParseNode(child, animatedNodes);
-                    TARGET.AddChild(childNode);
+                    var childNode = ParseNode(child, animatedNodes, TARGET);
                 }
             }
 
@@ -192,12 +197,12 @@ namespace Cocos2Unity.CocoStudio
                     break;
                 case "SpriteObjectData":
                     // fill sprite
-                    ModLink Sprite = ParseNodeFillerSprite(node);
+                    ModLinkedAsset Sprite = ParseNodeFillerSprite(node);
                     TARGET = new ModFiller(ModFiller.ModType.Sprite, Sprite);
                     break;
                 case "ProjectNodeObjectData":
                     // fill node
-                    ModLink Node = ParseNodeFillerNode(node);
+                    ModLinkedAsset Node = ParseNodeFillerNode(node);
                     TARGET = new ModFiller(ModFiller.ModType.Node, Node);
                     break;
                 default:
@@ -246,14 +251,14 @@ namespace Cocos2Unity.CocoStudio
             return TARGET;
         }
 
-        private static ModLink ParseNodeFillerSprite(XmlElement node)
+        private static ModLinkedAsset ParseNodeFillerSprite(XmlElement node)
         {
             var FileData = node.GetElement("FileData");
             var TARGET = GetModLink(FileData);
             return TARGET;
         }
 
-        private static ModLink ParseNodeFillerNode(XmlElement node)
+        private static ModLinkedAsset ParseNodeFillerNode(XmlElement node)
         {
             var FileData = node.GetElement("FileData");
             var TARGET = GetModLink(FileData);
@@ -283,7 +288,7 @@ namespace Cocos2Unity.CocoStudio
                 {
                     timeline = TARGET.AddTimeline(node);
                 }
-                FillTimelineCurve(timeline, Timeline);
+                FillTimelineCurve(timeline, Timeline, node);
             }
             defaultAnimation = list.GetStringAttribute("ActivedAnimationName");
             if (string.IsNullOrEmpty(defaultAnimation))
@@ -293,7 +298,7 @@ namespace Cocos2Unity.CocoStudio
             return TARGET;
         }
 
-        private static void FillTimelineCurve(ModTimeline<ModNode> timeline, XmlElement list)
+        private static void FillTimelineCurve(ModTimeline<ModNode> timeline, XmlElement list, ModNode nodeToFixOriginData = null)
         {
             var Property = list.GetStringAttribute("Property");
             switch (Property)
@@ -301,30 +306,37 @@ namespace Cocos2Unity.CocoStudio
                 case "Position":
                     var curvePosition = timeline.AddCurve<ModVector2>("Rect.Position");
                     FillTimelineCurveFrames(curvePosition, list, e => GetModVector2(e));
+                    if (nodeToFixOriginData != null) nodeToFixOriginData.Rect.Position = curvePosition.KeyFrames[0].Value;
                     break;
                 case "Scale":
                     var curveScale = timeline.AddCurve<ModVector2>("Scale");
                     FillTimelineCurveFrames(curveScale, list, e => GetModVector2(e));
+                    if (nodeToFixOriginData != null) nodeToFixOriginData.Scale = curveScale.KeyFrames[0].Value;
                     break;
                 case "AnchorPoint":
                     var curvePivot = timeline.AddCurve<ModVector2>("Pivot");
                     FillTimelineCurveFrames(curvePivot, list, e => GetModVector2(e));
+                    if (nodeToFixOriginData != null) nodeToFixOriginData.Pivot = curvePivot.KeyFrames[0].Value;
                     break;
                 case "VisibleForFrame":
                     var curveVisible = timeline.AddCurve<ModBoolean>("Visible");
                     FillTimelineCurveFrames(curveVisible, list, e => e.GetBoolAttribute("Value"));
+                    if (nodeToFixOriginData != null) nodeToFixOriginData.Visible = curveVisible.KeyFrames[0].Value;
                     break;
                 case "RotationSkew":
                     var curveSkew = timeline.AddCurve<ModVector2>("Skew");
                     FillTimelineCurveFrames(curveSkew, list, e => GetModVector2(e));
+                    if (nodeToFixOriginData != null) nodeToFixOriginData.Skew = curveSkew.KeyFrames[0].Value;
                     break;
                 case "FileData":
-                    var curveSprite = timeline.AddCurve<ModLink>("Filler.Sprite");
+                    var curveSprite = timeline.AddCurve<ModLinkedAsset>("Filler.Sprite");
                     FillTimelineCurveFrames(curveSprite, list, e => GetModLink(e.GetElement("TextureFile")));
+                    if (nodeToFixOriginData != null) nodeToFixOriginData.Filler.Sprite = curveSprite.KeyFrames[0].Value;
                     break;
                 case "Alpha":
                     var curveAlpha = timeline.AddCurve<ModSingle>("Color.A");
                     FillTimelineCurveFrames(curveAlpha, list, e => e.GetIntegerAttribute("Value") / 255f);
+                    if (nodeToFixOriginData != null) nodeToFixOriginData.Color.A = curveAlpha.KeyFrames[0].Value;
                     break;
                 default:
                     XmlAnalyzer.LogNonAccessKey("Animation.Timeline.Property", Property);

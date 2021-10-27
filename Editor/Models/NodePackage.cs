@@ -42,6 +42,32 @@ namespace Cocos2Unity.Models
             }
         }
 
+        public IEnumerable<ModLinkedAsset> LinkedNodes
+        {
+            get
+            {
+                var nodes = new Dictionary<string, ModLinkedAsset>();
+                if (Root != null)
+                {
+                    Root.GetLinkedNodes(nodes);
+                }
+                return nodes.Values;
+            }
+        }
+
+        public IEnumerable<ModLinkedAsset> LinkedSprites
+        {
+            get
+            {
+                var sprites = new Dictionary<string, ModLinkedAsset>();
+                if (Root != null)
+                {
+                    Root.GetLinkedSprites(sprites);
+                }
+                return sprites.Values;
+            }
+        }
+
         public NodePackage()
         {
             atlasList = new List<ModNodeAnimationAtlas>();
