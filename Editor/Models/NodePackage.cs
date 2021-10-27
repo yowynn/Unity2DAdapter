@@ -5,20 +5,20 @@ namespace Cocos2Unity.Models
     public class NodePackage
     {
         private string name;
-        private ModNode root;
+        private ModNode rootNode;
         private List<ModNodeAnimationAtlas> atlasList;
         private string defaultAnimationName;
         public string Name { get => name; set => name = value; }
-        public ModNode Root { get => root; set => root = value; }
+        public ModNode RootNode { get => rootNode; set => rootNode = value; }
         public string DefaultAnimationName { get => defaultAnimationName; set => defaultAnimationName = value; }
         public List<ModNode> Nodes
         {
             get
             {
                 var nodes = new List<ModNode>();
-                if (Root != null)
+                if (RootNode != null)
                 {
-                    Root.GetChildrenRecursive(nodes);
+                    RootNode.GetChildrenRecursive(nodes);
                 }
                 return nodes;
             }
@@ -47,9 +47,9 @@ namespace Cocos2Unity.Models
             get
             {
                 var nodes = new Dictionary<string, ModLinkedAsset>();
-                if (Root != null)
+                if (RootNode != null)
                 {
-                    Root.GetLinkedNodes(nodes);
+                    RootNode.GetLinkedNodes(nodes);
                 }
                 return nodes.Values;
             }
@@ -60,9 +60,9 @@ namespace Cocos2Unity.Models
             get
             {
                 var sprites = new Dictionary<string, ModLinkedAsset>();
-                if (Root != null)
+                if (RootNode != null)
                 {
-                    Root.GetLinkedSprites(sprites);
+                    RootNode.GetLinkedSprites(sprites);
                 }
                 return sprites.Values;
             }

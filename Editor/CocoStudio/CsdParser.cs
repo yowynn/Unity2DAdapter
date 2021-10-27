@@ -26,7 +26,7 @@ namespace Cocos2Unity.CocoStudio
             ModNode node = ParseNode(ObjectData, animatedNodes);
             ModNodeAnimationAtlas atlas = ParseTimeline(Animation, animatedNodes, out string defaultAnimationName);
             FillAnimationInfos(AnimationList, atlas);
-            TARGET.Root = node;
+            TARGET.RootNode = node;
             TARGET.DefaultAnimationName = defaultAnimationName;
             TARGET.AddAtlas(atlas);
 

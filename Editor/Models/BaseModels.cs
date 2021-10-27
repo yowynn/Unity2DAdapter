@@ -269,10 +269,22 @@ namespace Cocos2Unity.Models
         private ModType type;
         private object filler;
 
-        public ModType Type { get => type; set => type = value; }
-        public ModColorVector Color { get => (ModColorVector)filler; set => filler = value; }
-        public ModLinkedAsset Sprite { get => (ModLinkedAsset)filler; set => filler = value; }
-        public ModLinkedAsset Node { get => (ModLinkedAsset)filler; set => filler = value; }
+        public ModType Type { get => type; private set => type = value; }
+        public ModColorVector Color
+        {
+            get { return Type == ModType.Color ? (ModColorVector)filler : null; }
+            set { Type = ModType.Color; filler = value; }
+        }
+        public ModLinkedAsset Sprite
+        {
+            get { return Type == ModType.Sprite ? (ModLinkedAsset)filler : null; }
+            set { Type = ModType.Sprite; filler = value; }
+        }
+        public ModLinkedAsset Node
+        {
+            get { return Type == ModType.Node ? (ModLinkedAsset)filler : null; }
+            set { Type = ModType.Node; filler = value; }
+        }
 
         public ModFiller(ModType type, object filler = null)
         {
