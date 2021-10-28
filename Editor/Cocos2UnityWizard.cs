@@ -2,6 +2,8 @@ using UnityEditor;
 using UnityEngine;
 using System.IO;
 using Wynncs.Util;
+using System;
+using System.Collections.Generic;
 
 namespace Cocos2Unity
 {
@@ -68,12 +70,24 @@ namespace Cocos2Unity
 
         public void ConventCsds()
         {
-            var pc = new Cocos2Unity<UINodeConvertor>();
-            pc.RelativeSrcResPath = RelativeSrcResPath;
-            pc.RelativeExpResPath = RelativeExpResPath;
-            pc.isConvertCSD = true;
-            pc.isConvertCSI = true;
-            pc.Convert(InputPath, OutputPath);
+            // var pc = new Cocos2Unity<UINodeConvertor>();
+            // pc.RelativeSrcResPath = RelativeSrcResPath;
+            // pc.RelativeExpResPath = RelativeExpResPath;
+            // pc.isConvertCSD = true;
+            // pc.isConvertCSI = true;
+            // pc.Convert(InputPath, OutputPath);
+            ProjectConvertor.Parser = new CocoStudio.Parser
+            {
+                RelativeSrcResPath = RelativeSrcResPath,
+                RelativeExpResPath = RelativeExpResPath,
+                IsConvertCSD = true,
+                IsConvertCSI = true,
+            };
+            ProjectConvertor.Convertor = new Unity.CanvasAnimatedGameObjectConvertor();
+            ProjectConvertor.Convert(InputPath, OutputPath);
+
         }
+
     }
+
 }

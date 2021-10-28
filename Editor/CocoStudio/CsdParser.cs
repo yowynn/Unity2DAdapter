@@ -5,9 +5,9 @@ using System.Collections.Generic;
 
 namespace Cocos2Unity.CocoStudio
 {
-    public partial class Parser
+    public static class CsdParser
     {
-        public static partial NodePackage ParseCsd(string filepath)
+        public static NodePackage ParseCsd(string filepath)
         {
             var TARGET = new NodePackage();
             var file = new XmlDocument();
@@ -351,7 +351,7 @@ namespace Cocos2Unity.CocoStudio
                 var FrameIndex = Frame.GetIntegerAttribute("FrameIndex");
                 var Value = parser(Frame);
                 var frame = curve.AddFrame(FrameIndex, Value);
-                var Tween = Frame.GetBoolAttribute("Tween", true);
+                var Tween = Frame.GetBoolAttribute("Tween", false);
                 if (Tween)
                 {
                     frame.Transition = CubicBezier.Constant;

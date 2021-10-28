@@ -106,7 +106,7 @@ namespace Cocos2Unity.Models
             {
                 foreach (ModNode child in Children)
                 {
-                    child.GetLinkedNodes(linkedSprites);
+                    child.GetLinkedSprites(linkedSprites);
                 }
             }
         }
@@ -214,7 +214,7 @@ namespace Cocos2Unity.Models
                     FrameRate = FrameRate,
                     TimeFrom = info.TimeFrom,
                     TimeTo = info.TimeTo,
-                    Timelines = timelines,
+                    AnimationAtlas = this,
                 };
             }
             else
@@ -242,7 +242,7 @@ namespace Cocos2Unity.Models
         public float TimeTo;
         public int IndexFrom { get => (int)(TimeFrom * FrameRate + 0.5); set { TimeFrom = value / FrameRate; } }
         public int IndexTo { get => (int)(TimeTo * FrameRate + 0.5); set { TimeTo = value / FrameRate; } }
-        public Dictionary<ModNode, ModTimeline<ModNode>> Timelines;
+        public ModNodeAnimationAtlas AnimationAtlas;
 
         public float Duration
         {

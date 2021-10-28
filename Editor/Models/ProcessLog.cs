@@ -5,13 +5,14 @@ using System.IO;
 
 namespace Cocos2Unity.Models
 {
-    public static class ProsessLog
+    public static class ProcessLog
     {
         static StringBuilder sb = new StringBuilder();
         public static void Log(string log)
         {
             var time = DateTime.Now.ToLongTimeString();
             sb.AppendLine(string.Format("[{0}] {1}", time, log));
+            Flush();  //for debug
         }
         public static void Flush(string logfile = null)
         {
@@ -20,7 +21,7 @@ namespace Cocos2Unity.Models
                 string s = sb.ToString();
                 if (string.IsNullOrEmpty(logfile))
                 {
-                    // UnityEngine.Debug.Log(s);
+                    UnityEngine.Debug.Log(s);
                 }
                 else
                 {

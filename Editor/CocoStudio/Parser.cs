@@ -17,7 +17,7 @@ namespace Cocos2Unity.CocoStudio
         public void ParseFromPath(string path)
         {
             ParseProjectPath(path);
-            GenerateAssetListToParse();
+            GenerateAssetListToParse(path);
             Parse();
         }
 
@@ -36,8 +36,14 @@ namespace Cocos2Unity.CocoStudio
         # endregion
 
 
-        public static partial NodePackage ParseCsd(string filepath);
-        public static partial SpriteList ParseCsi(string filepath);
+        public static NodePackage ParseCsd(string filepath)
+        {
+            return CsdParser.ParseCsd(filepath);
+        }
+        public static SpriteList ParseCsi(string filepath)
+        {
+            return CsiParser.ParseCsi(filepath);
+        }
 
         public bool IsConvertCSD { private get; set; } = true;
         public bool IsConvertCSI { private get; set; } = true;
@@ -114,11 +120,11 @@ namespace Cocos2Unity.CocoStudio
             }
         }
 
-        private void GenerateAssetListToParse()
+        private void GenerateAssetListToParse(string path)
         {
             csdFiles = new List<string>();
             csiFiles = new List<string>();
-            FileSystem.EnumPath(SrcResPath, f =>
+            FileSystem.EnumPath(path, f =>
             {
                 if (FileSystem.IsFolder(f))
                 {
@@ -126,12 +132,12 @@ namespace Cocos2Unity.CocoStudio
                 }
                 if (f.Extension.ToLower() == ".csd" && IsConvertCSD)
                 {
-                    var assetpath = f.FullName.Replace(SrcResPath + Path.PathSeparator, "").Replace('\\', '/');
+                    var assetpath = f.FullName.Replace(SrcResPath + Path.DirectorySeparatorChar, "").Replace('\\', '/');
                     csdFiles.Add(assetpath);
                 }
                 else if (f.Extension.ToLower() == ".csi" && IsConvertCSI)
                 {
-                    var assetpath = f.FullName.Replace(SrcResPath + Path.PathSeparator, "").Replace('\\', '/');
+                    var assetpath = f.FullName.Replace(SrcResPath + Path.DirectorySeparatorChar, "").Replace('\\', '/');
                     csiFiles.Add(assetpath);
                 }
             }, true);
@@ -139,26 +145,28 @@ namespace Cocos2Unity.CocoStudio
 
         private void Parse()
         {
-            ProsessLog.Log($"Start Parse CocoStudio project: {ProjectName}");
+            ProcessLog.Log($"Start Parse CocoStudio project: {ProjectName}");
             ParsedNodePackages = new Dictionary<string, NodePackage>();
             ParsedSpriteLists = new Dictionary<string, SpriteList>();
             dictUnparsedAssetPaths = new Dictionary<string, bool>();
             foreach (var csi in csiFiles)
             {
+                // ProcessLog.Log(csi);
                 HandleCsiAsset(csi);
             }
             foreach (var csd in csdFiles)
             {
+                // ProcessLog.Log(csd);
                 HandleCsdAsset(csd);
             }
-            ProsessLog.Log($"End Parse CocoStudio project: {ProjectName}");
+            ProcessLog.Log($"End Parse CocoStudio project: {ProjectName}");
         }
 
         private void HandleCsdAsset(string assetpath)
         {
             if (!ParsedNodePackages.ContainsKey(assetpath))
             {
-                ProsessLog.Log($"--Handle Csd Asset: {assetpath}");
+                ProcessLog.Log($"--Handle Csd Asset: {assetpath}");
                 var nodePackage = ParseCsd(Path.Combine(SrcResPath, assetpath));
                 ParsedNodePackages.Add(assetpath, nodePackage);
                 foreach (var linkedNode in nodePackage.LinkedNodes)
@@ -177,7 +185,7 @@ namespace Cocos2Unity.CocoStudio
         {
             if (!ParsedSpriteLists.ContainsKey(assetpath))
             {
-                ProsessLog.Log($"--Handle Csi Asset: {assetpath}");
+                ProcessLog.Log($"--Handle Csi Asset: {assetpath}");
                 var spriteList = ParseCsi(Path.Combine(SrcResPath, assetpath));
                 ParsedSpriteLists.Add(assetpath, spriteList);
                 foreach (var linkedSprite in spriteList.LinkedSprites)
@@ -191,7 +199,7 @@ namespace Cocos2Unity.CocoStudio
         {
             if (!dictUnparsedAssetPaths.ContainsKey(assetpath))
             {
-                ProsessLog.Log($"--Handle Sprite Asset: {assetpath}");
+                // ProcessLog.Log($"--Handle Sprite Asset: {assetpath}");
                 dictUnparsedAssetPaths.Add(assetpath, true);
             }
         }

@@ -149,6 +149,10 @@ namespace Cocos2Unity.Models
         public ModVector2 Size { get => size; set => size = value; }
         public ModVector2 Min { get => position; set => position = value; }
         public ModVector2 Max { get => position + size; set => size = value - position; }
+        public float X { get => position.X; set => position.X = value; }
+        public float Y { get => position.Y; set => position.Y = value; }
+        public float Width { get => size.X; set => size.X = value; }
+        public float Height { get => size.Y; set => size.Y = value; }
 
         public ModRect() : this(new ModVector2(), new ModVector2())
         {

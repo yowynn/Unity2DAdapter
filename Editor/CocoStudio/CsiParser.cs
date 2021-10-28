@@ -3,9 +3,9 @@ using System.Xml;
 
 namespace Cocos2Unity.CocoStudio
 {
-    public partial class Parser
+    public static class CsiParser
     {
-        public static partial SpriteList ParseCsi(string filepath)
+        public static SpriteList ParseCsi(string filepath)
         {
             var TARGET = new SpriteList();
             var file = new XmlDocument();

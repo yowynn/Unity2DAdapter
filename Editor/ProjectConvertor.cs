@@ -1,8 +1,7 @@
 using Cocos2Unity.Models;
 using System;
 using System.IO;
-using System.Collections.Generic;
-using Wynncs.Util;
+
 
 namespace Cocos2Unity
 {
@@ -21,11 +20,6 @@ namespace Cocos2Unity
             if (string.IsNullOrEmpty(outputPath))
             {
                 throw new ArgumentNullException("outputPath");
-            }
-
-            if (!Directory.Exists(inputPath))
-            {
-                throw new DirectoryNotFoundException(inputPath);
             }
 
             if (!Directory.Exists(outputPath))

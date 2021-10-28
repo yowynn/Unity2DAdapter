@@ -1,8 +1,8 @@
 using System;
 using System.Xml;
 using System.Collections.Generic;
-using Wynncs.Entry;
 using Wynncs.Util;
+using Cocos2Unity.Models;
 
 namespace Cocos2Unity
 {

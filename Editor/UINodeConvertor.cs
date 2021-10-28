@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.UI;
-using Wynncs.Entry;
+using Cocos2Unity.Models;
 
 namespace Cocos2Unity
 {
