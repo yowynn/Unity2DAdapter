@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace Wynncs.Util
+namespace Cocos2Unity.Util
 {
     public class FileSystem
     {

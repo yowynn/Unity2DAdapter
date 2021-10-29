@@ -1,8 +1,7 @@
 using System.Collections.Generic;
 using System.Xml;
-using Wynncs.Util;
 
-namespace Cocos2Unity.CocoStudio
+namespace Cocos2Unity.Util
 {
     public static class XmlAnalyzer
     {
@@ -94,7 +93,7 @@ namespace Cocos2Unity.CocoStudio
             logd[val] = ++count;
         }
 
-        public static void SwapAccessLog(string outfile = null)
+        public static void Flush(string outfile = null)
         {
             if (outfile != null)
             {

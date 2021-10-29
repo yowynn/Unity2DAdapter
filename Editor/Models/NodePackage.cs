@@ -46,7 +46,7 @@ namespace Cocos2Unity.Models
         {
             get
             {
-                var nodes = new Dictionary<string, ModLinkedAsset>();
+                var nodes = new Dictionary<ModNode, ModLinkedAsset>();
                 if (RootNode != null)
                 {
                     RootNode.GetLinkedNodes(nodes);
@@ -59,7 +59,7 @@ namespace Cocos2Unity.Models
         {
             get
             {
-                var sprites = new Dictionary<string, ModLinkedAsset>();
+                var sprites = new Dictionary<ModNode, ModLinkedAsset>();
                 if (RootNode != null)
                 {
                     RootNode.GetLinkedSprites(sprites);

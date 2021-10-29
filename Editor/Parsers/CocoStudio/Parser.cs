@@ -1,8 +1,8 @@
-using Cocos2Unity.Models;
 using System;
-using System.IO;
 using System.Collections.Generic;
-using Wynncs.Util;
+using System.IO;
+using Cocos2Unity.Models;
+using Cocos2Unity.Util;
 
 namespace Cocos2Unity.CocoStudio
 {
@@ -36,13 +36,34 @@ namespace Cocos2Unity.CocoStudio
         # endregion
 
 
-        public static NodePackage ParseCsd(string filepath)
+        public NodePackage ParseCsd(string assetpath)
         {
-            return CsdParser.ParseCsd(filepath);
+            NodePackage nodePackage = null;
+            try
+            {
+                var filepath = Path.Combine(SrcResPath, assetpath);
+                nodePackage = CsdParser.ParseCsd(filepath);
+            }
+            catch (Exception e)
+            {
+                MarkHandleError(assetpath, e.Message);
+            }
+            return nodePackage;
         }
-        public static SpriteList ParseCsi(string filepath)
+
+        public SpriteList ParseCsi(string assetpath)
         {
-            return CsiParser.ParseCsi(filepath);
+            SpriteList spriteList = null;
+            try
+            {
+                var filepath = Path.Combine(SrcResPath, assetpath);
+                spriteList = CsiParser.ParseCsi(filepath);
+            }
+            catch (Exception e)
+            {
+                MarkHandleError(assetpath, e.Message);
+            }
+            return spriteList;
         }
 
         public bool IsConvertCSD { private get; set; } = true;
@@ -51,6 +72,7 @@ namespace Cocos2Unity.CocoStudio
         public string RelativeExpResPath { private get; set; } = "res";
 
         private IDictionary<string, bool> dictUnparsedAssetPaths;
+        private IDictionary<string, bool> dictErrorAssetPaths;
         public string ProjectPath { get; private set; }
         public string SrcResPath { get; private set; }
         public string ExpResPath { get; private set; }
@@ -149,6 +171,7 @@ namespace Cocos2Unity.CocoStudio
             ParsedNodePackages = new Dictionary<string, NodePackage>();
             ParsedSpriteLists = new Dictionary<string, SpriteList>();
             dictUnparsedAssetPaths = new Dictionary<string, bool>();
+            dictErrorAssetPaths = new Dictionary<string, bool>();
             foreach (var csi in csiFiles)
             {
                 // ProcessLog.Log(csi);
@@ -164,49 +187,64 @@ namespace Cocos2Unity.CocoStudio
 
         private void HandleCsdAsset(string assetpath)
         {
-            if (!ParsedNodePackages.ContainsKey(assetpath))
+            if (!IsHandled(assetpath))
             {
-                ProcessLog.Log($"--Handle Csd Asset: {assetpath}");
-                var nodePackage = ParseCsd(Path.Combine(SrcResPath, assetpath));
-                ParsedNodePackages.Add(assetpath, nodePackage);
-                foreach (var linkedNode in nodePackage.LinkedNodes)
+                ProcessLog.Log($"--Handle CSD Asset: {assetpath}");
+                var nodePackage = ParseCsd(assetpath);
+                if (nodePackage != null)
                 {
-                    HandleCsdAsset(linkedNode.Name);
+                    ParsedNodePackages.Add(assetpath, nodePackage);
+                    foreach (var linkedNode in nodePackage.LinkedNodes)
+                    {
+                        HandleCsdAsset(linkedNode.Name);
+                    }
+                    foreach (var linkedSprite in nodePackage.LinkedSprites)
+                    {
+                        HandleSpriteAsset(linkedSprite.Name);
+                    }
                 }
-                foreach (var linkedSprite in nodePackage.LinkedSprites)
-                {
-                    HandleSpriteAsset(linkedSprite.Name);
-                }
-
             }
         }
 
         private void HandleCsiAsset(string assetpath)
         {
-            if (!ParsedSpriteLists.ContainsKey(assetpath))
+            if (!IsHandled(assetpath))
             {
-                ProcessLog.Log($"--Handle Csi Asset: {assetpath}");
+                ProcessLog.Log($"--Handle CSI Asset: {assetpath}");
                 var spriteList = ParseCsi(Path.Combine(SrcResPath, assetpath));
-                ParsedSpriteLists.Add(assetpath, spriteList);
-                foreach (var linkedSprite in spriteList.LinkedSprites)
+                if (spriteList != null)
                 {
-                    HandleSpriteAsset(linkedSprite.Name);
+                    ParsedSpriteLists.Add(assetpath, spriteList);
+                    foreach (var linkedSprite in spriteList.LinkedSprites)
+                    {
+                        HandleSpriteAsset(linkedSprite.Name);
+                    }
                 }
             }
         }
 
         private void HandleSpriteAsset(string assetpath)
         {
-            if (!dictUnparsedAssetPaths.ContainsKey(assetpath))
+            if (!IsHandled(assetpath))
             {
-                // ProcessLog.Log($"--Handle Sprite Asset: {assetpath}");
+                ProcessLog.Log($"--Handle IMG Asset: {assetpath}");
                 dictUnparsedAssetPaths.Add(assetpath, true);
             }
         }
 
+        private void MarkHandleError(string assetpath, string error)
+        {
+            ProcessLog.Log($"!!Handle Error: {assetpath}");
+            ProcessLog.Log(error);
+            dictErrorAssetPaths.Add(assetpath, true);
+        }
+
         public bool IsHandled(string assetpath)
         {
-            return ParsedNodePackages.ContainsKey(assetpath) || ParsedSpriteLists.ContainsKey(assetpath) || dictUnparsedAssetPaths.ContainsKey(assetpath);
+            return ParsedNodePackages.ContainsKey(assetpath)
+                || ParsedSpriteLists.ContainsKey(assetpath)
+                || dictUnparsedAssetPaths.ContainsKey(assetpath)
+                || dictErrorAssetPaths.ContainsKey(assetpath);
         }
 
     }

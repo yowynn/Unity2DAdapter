@@ -2,7 +2,7 @@
 using System.Xml;
 using System.IO;
 
-namespace Wynncs.Util
+namespace Cocos2Unity.Util
 {
     public class XmlUtil
     {

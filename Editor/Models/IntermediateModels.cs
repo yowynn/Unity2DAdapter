@@ -79,11 +79,11 @@ namespace Cocos2Unity.Models
             }
         }
 
-        public void GetLinkedNodes(Dictionary<string, ModLinkedAsset> linkedNodes)
+        public void GetLinkedNodes(Dictionary<ModNode, ModLinkedAsset> linkedNodes)
         {
             if (Filler.Type == ModFiller.ModType.Node)
             {
-                linkedNodes.Add(Path, Filler.Node);
+                linkedNodes.Add(this, Filler.Node);
             }
 
             if (HasChildren)
@@ -95,11 +95,11 @@ namespace Cocos2Unity.Models
             }
         }
 
-        public void GetLinkedSprites(Dictionary<string, ModLinkedAsset> linkedSprites)
+        public void GetLinkedSprites(Dictionary<ModNode, ModLinkedAsset> linkedSprites)
         {
             if (Filler.Type == ModFiller.ModType.Sprite)
             {
-                linkedSprites.Add(Path, Filler.Sprite);
+                linkedSprites.Add(this, Filler.Sprite);
             }
 
             if (HasChildren)

@@ -1,6 +1,7 @@
-using Cocos2Unity.Models;
 using System;
 using System.IO;
+using Cocos2Unity.Models;
+using Cocos2Unity.Util;
 
 
 namespace Cocos2Unity
@@ -43,16 +44,40 @@ namespace Cocos2Unity
 
             foreach (var assetpath in Parser.UnparsedAssetPaths)
             {
-                Convertor.ImportUnparsedAsset(assetpath, Parser.GetFullAssetPath);
+                try
+                {
+                    Convertor.ImportUnparsedAsset(assetpath, Parser.GetFullAssetPath);
+                }
+                catch (Exception e)
+                {
+                    ProcessLog.LogError($"Failed to import asset {assetpath}, {e.Message}");
+                }
             }
             foreach (var assetpath in Parser.ParsedSpriteLists.Keys)
             {
-                Convertor.ConvertSpriteList(assetpath, p => Parser.ParsedSpriteLists[p]);
+                try
+                {
+                    Convertor.ConvertSpriteList(assetpath, p => Parser.ParsedSpriteLists[p]);
+                }
+                catch (Exception e)
+                {
+                    ProcessLog.LogError($"Failed to import asset {assetpath}, {e.Message}");
+                }
             }
             foreach (var assetpath in Parser.ParsedNodePackages.Keys)
             {
-                Convertor.ConvertNodePackage(assetpath, p => Parser.ParsedNodePackages[p]);
+                try
+                {
+                    Convertor.ConvertNodePackage(assetpath, p => Parser.ParsedNodePackages[p]);
+                }
+                catch (Exception e)
+                {
+                    ProcessLog.LogError($"Failed to import asset {assetpath}, {e.Message}");
+                }
             }
+
+            ProcessLog.Flush(Path.Combine(outputPath, "process.log"));
+            XmlAnalyzer.Flush(Path.Combine(outputPath, "analyser.xml"));
         }
     }
 }

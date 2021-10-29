@@ -1,13 +1,14 @@
 using System;
-using Cocos2Unity.Models;
-using System.IO;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using Cocos2Unity.Models;
+using Cocos2Unity.Util;
 using UnityEngine;
-using UnityEditor;
 using UnityEngine.U2D;
+using UnityEditor;
 using UnityEditor.U2D;
 using UnityEditor.Animations;
-using System.Linq;
 
 namespace Cocos2Unity.Unity
 {
@@ -16,10 +17,12 @@ namespace Cocos2Unity.Unity
         # region Implemented IParser
         public void ConvertNodePackage(string assetpath, Func<string, NodePackage> GetNodePackage)
         {
+            ProcessLog.Log($"--Import NODE Assert: {assetpath}");
+            CreateAssetFolder(assetpath);
             NodePackage nodePackage = GetNodePackage(assetpath);
             if (nodePackage == null)
             {
-                Debug.LogError("Can't find the NodePackage" + assetpath);
+                ProcessLog.LogError("Can't find the NodePackage" + assetpath);
                 return;
             }
             if (convertedNodePackages.ContainsKey(assetpath))
@@ -36,10 +39,12 @@ namespace Cocos2Unity.Unity
 
         public void ConvertSpriteList(string assetpath, Func<string, SpriteList> GetSpriteList)
         {
+            ProcessLog.Log($"--Import ATLAS Assert: {assetpath}");
+            CreateAssetFolder(assetpath);
             SpriteList spriteList = GetSpriteList(assetpath);
             if (spriteList == null)
             {
-                Debug.LogError("Can't find the SpriteList: " + assetpath);
+                ProcessLog.LogError("Can't find the SpriteList: " + assetpath);
                 return;
             }
             if (convertedSpriteLists.ContainsKey(assetpath))
@@ -52,10 +57,12 @@ namespace Cocos2Unity.Unity
 
         public void ImportUnparsedAsset(string assetpath, Func<string, string> GetFullPath)
         {
+            ProcessLog.Log($"--Import OTHER Asset: {assetpath}");
+            CreateAssetFolder(assetpath);
             string fullpath = GetFullPath(assetpath);
             if (fullpath == null)
             {
-                Debug.LogError("Can't find Asset: " + assetpath);
+                ProcessLog.LogError("Can't find Asset: " + assetpath);
                 return;
             }
             if (importedUnparsedAssetAssets.ContainsKey(assetpath))
@@ -73,7 +80,7 @@ namespace Cocos2Unity.Unity
                     importedUnparsedAssetAssets.Add(assetpath, sprite);
                     break;
                 default:
-                    Debug.LogError("Unsupported asset type: " + assetpath);
+                    ProcessLog.LogError("Unsupported asset type: " + assetpath);
                     break;
             }
         }
@@ -113,6 +120,7 @@ namespace Cocos2Unity.Unity
         protected Sprite GetSprite(string assetpath)
         {
             importedUnparsedAssetAssets.TryGetValue(assetpath, out var sprite);
+            ProcessLog.Log($"--Get Sprite: {assetpath}, {sprite as Sprite}");
             return sprite as Sprite;
         }
 
@@ -126,13 +134,22 @@ namespace Cocos2Unity.Unity
             return GameObject.Instantiate(gameObject);
         }
 
+        protected void CreateAssetFolder(string assetpath)
+        {
+            var path = Path.GetDirectoryName(Path.Combine(FullOutputPath, assetpath));
+            if (!Directory.Exists(path))
+            {
+                Directory.CreateDirectory(path);
+            }
+        }
+
         private GameObject CreateAndSaveGameObject(string fromAssetPath, NodePackage nodePackage)
         {
             var toAssetPath = Path.ChangeExtension(Path.Combine(OutputPath, fromAssetPath), ".prefab");
-            Directory.CreateDirectory(Path.GetDirectoryName(Path.Combine(FullOutputPath, fromAssetPath))); // TODO: check if it's ok
             GameObject rootNode = ConvertFromNode(nodePackage.RootNode);
             rootNode.name = nodePackage.Name;
             BindAndSaveGameObjectAnimations(toAssetPath, rootNode, nodePackage.Animations, nodePackage.DefaultAnimationName);
+            ProcessLog.Log($"-- * {toAssetPath}");
             var prefab = PrefabUtility.SaveAsPrefabAssetAndConnect(rootNode, toAssetPath, InteractionMode.AutomatedAction);
             GameObject.DestroyImmediate(rootNode);
             Debug_AddPrefabToSceneCanvas(prefab, toAssetPath);
@@ -158,6 +175,7 @@ namespace Cocos2Unity.Unity
         private void BindAndSaveGameObjectAnimations(string rootNodeAssetPath, GameObject rootNode, IDictionary<string, ModNodeAnimation> animations, string defaultAnimationName = null)
         {
             var controllerAssetPath = Path.ChangeExtension(rootNodeAssetPath, ".controller");
+            ProcessLog.Log($"-- * {controllerAssetPath}");
             AnimatorController controller = AnimatorController.CreateAnimatorControllerAtPath(controllerAssetPath);
             if (!rootNode.TryGetComponent<Animator>(out var animator))
             {
@@ -193,7 +211,8 @@ namespace Cocos2Unity.Unity
                 transition.AddCondition(AnimatorConditionMode.If, 1f, name);
                 transition.hasExitTime = true;
 
-                var animAssetPath = Path.ChangeExtension(rootNodeAssetPath, $"_{name}.anim");
+                var animAssetPath = Path.ChangeExtension(rootNodeAssetPath, $"{name}.anim");
+                ProcessLog.Log($"-- * {animAssetPath}");
                 AssetDatabase.CreateAsset(clip, animAssetPath);
             }
             AssetDatabase.SaveAssets();                         // TODO: Check if this is needed
@@ -332,8 +351,10 @@ namespace Cocos2Unity.Unity
             {
                 foreach (var binding in group)
                 {
-                    AnimationUtility.SetEditorCurve(clip, binding, null);
-                    AnimationUtility.SetObjectReferenceCurve(clip, binding, null);
+                    if (bindings.Contains(binding))
+                        AnimationUtility.SetEditorCurve(clip, binding, null);
+                    else
+                        AnimationUtility.SetObjectReferenceCurve(clip, binding, null);
                 }
             }
             int beforeCount = markedUsefulCurves.Count;
@@ -406,9 +427,9 @@ namespace Cocos2Unity.Unity
             foreach (var linkedSprite in spriteList.LinkedSprites)
             {
                 var sprite = GetSprite(linkedSprite.Name);
-                if (sprite != null)
+                if (sprite == null)
                 {
-                    Debug.LogError("Sprite not found: " + linkedSprite.Name);
+                    ProcessLog.LogError("Sprite not found: " + linkedSprite.Name);
                     continue;
                 }
                 sprites.Add(sprite);
@@ -418,12 +439,14 @@ namespace Cocos2Unity.Unity
             SpriteAtlasPackingSettings packingSettings = atlas.GetPackingSettings();
             packingSettings.enableRotation = false && spriteList.AllowRotation;     // force to disable rotation in UI Canvas
             packingSettings.padding = spriteList.SpritePadding;
+            // ! 因为Unity的SpriteAtlas的Packing方式是按照图片的最大边进行排列，而不是按照图片的最小边进行排列，所以这里需要设置一下
+            packingSettings.enableTightPacking = false;
             atlas.SetPackingSettings(packingSettings);
 
             TextureImporterPlatformSettings defaultPlatformSettings = atlas.GetPlatformSettings("DefaultTexturePlatform");
             defaultPlatformSettings.maxTextureSize = (int)spriteList.MaxTextureSize.X;
             atlas.SetPlatformSettings(defaultPlatformSettings);
-
+            ProcessLog.Log($"-- * {toAssetPath}");
             AssetDatabase.CreateAsset(atlas, toAssetPath);
             return atlas;
         }
@@ -432,14 +455,10 @@ namespace Cocos2Unity.Unity
         {
             var toAssetPath = Path.Combine(OutputPath, fromAssetPath);
             var toFullPath = Path.Combine(FullOutputPath, fromAssetPath);
+            ProcessLog.Log($"-- * {toAssetPath}");
             File.Copy(fromFullPath, toFullPath, true);
-            // AssetDatabase.ImportAsset(toAssetPath);
-            // Debug.Log("Import " + toAssetPath);
-            // var texture = AssetDatabase.LoadAssetAtPath<Texture2D>(toAssetPath);
-            // Debug.Log($"Importing sprite: {fromFullPath} to {toFullPath} {texture}");
-            // var sprite = Sprite.Create(texture, new Rect(0, 0, texture.width, texture.height), new Vector2(0.5f, 0.5f));
-            AssetDatabase.ImportAsset(toAssetPath);
 
+            AssetDatabase.ImportAsset(toAssetPath);
             TextureImporter importer = (TextureImporter)TextureImporter.GetAtPath(toAssetPath);
             importer.textureType = TextureImporterType.Sprite;
             importer.spriteImportMode = SpriteImportMode.Single;
@@ -449,36 +468,6 @@ namespace Cocos2Unity.Unity
             var sprite = AssetDatabase.LoadAssetAtPath<Sprite>(toAssetPath);
 
             sprite.name = Path.GetFileNameWithoutExtension(fromAssetPath);
-            // var dir = Path.GetDirectoryName(toAssetPath);
-            // var name = Path.GetFileNameWithoutExtension(toAssetPath);
-            // var pngpath = Path.Combine(dir, name + ".png");
-            // var png = AssetDatabase.LoadAssetAtPath<Texture2D>(pngpath);
-            // if (png == null)
-            // {
-            //     var pngdir = Path.GetDirectoryName(pngpath);
-            //     if (!Directory.Exists(pngdir))
-            //     {
-            //         Directory.CreateDirectory(pngdir);
-            //     }
-            //     var pngasset = AssetDatabase.LoadAssetAtPath<Texture2D>(pngpath);
-            //     if (pngasset == null)
-            //     {
-            //         pngasset = new Texture2D(texture.width, texture.height, TextureFormat.ARGB32, false);
-            //         pngasset.SetPixels32(texture.GetPixels32());
-            //         pngasset.Apply();
-            //         AssetDatabase.CreateAsset(pngasset, pngpath);
-            //     }
-            //     AssetDatabase.CreateAsset(sprite, toAssetPath);
-            // }
-            // else
-            // {
-            //     var spriteasset = AssetDatabase.LoadAssetAtPath<Sprite>(toAssetPath);
-            //     if (spriteasset == null)
-            //     {
-            //         AssetDatabase.CreateAsset(sprite, toAssetPath);
-            //     }
-            // }
-            // AssetDatabase.CreateAsset(sprite, toAssetPath);
             return sprite;
         }
 

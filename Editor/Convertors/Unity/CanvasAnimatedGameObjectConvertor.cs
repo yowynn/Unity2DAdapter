@@ -1,9 +1,10 @@
 using System;
 using System.Collections.Generic;
 using Cocos2Unity.Models;
-using UnityEditor;
+using Cocos2Unity.Util;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEditor;
 
 namespace Cocos2Unity.Unity
 {
@@ -100,6 +101,9 @@ namespace Cocos2Unity.Unity
                         break;
                     case "Skew":
                         {
+                            // ! use "localEulerAnglesRaw.x" to set "Euler Angles" Mode
+                            // ! use "localEulerAnglesBaked.x" to set "Euler Angles (Quaternion)" Mode
+                            // ! use "localEulerAngles.x" to set "Quaternion" Mode
                             var origin = timeline.GetCurve<ModVector2>(propertyName);
                             BindFloatCurves(clip, origin, new[]{
                                 GetBinding<RectTransform>("localEulerAnglesRaw.x"),
@@ -120,6 +124,7 @@ namespace Cocos2Unity.Unity
                                     skew.y,
                                 };
                             });
+
                         }
                         break;
                     case "Filler.Sprite":

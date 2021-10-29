@@ -3,7 +3,7 @@ using System;
 using System.Text;
 using System.IO;
 
-namespace Cocos2Unity.Models
+namespace Cocos2Unity.Util
 {
     public static class ProcessLog
     {
@@ -12,6 +12,12 @@ namespace Cocos2Unity.Models
         {
             var time = DateTime.Now.ToLongTimeString();
             sb.AppendLine(string.Format("[{0}] {1}", time, log));
+        }
+
+        public static void LogError(string log)
+        {
+            var time = DateTime.Now.ToLongTimeString();
+            sb.AppendLine(string.Format("[{0}] ERROR: {1}", time, log));
         }
         public static string Flush(string logfile = null)
         {
