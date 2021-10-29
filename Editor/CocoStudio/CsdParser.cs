@@ -351,8 +351,8 @@ namespace Cocos2Unity.CocoStudio
                 var FrameIndex = Frame.GetIntegerAttribute("FrameIndex");
                 var Value = parser(Frame);
                 var frame = curve.AddFrame(FrameIndex, Value);
-                var Tween = Frame.GetBoolAttribute("Tween", false);
-                if (Tween)
+                var Tween = Frame.GetBoolAttribute("Tween", true);
+                if (!Tween)
                 {
                     frame.Transition = CubicBezier.Constant;
                 }

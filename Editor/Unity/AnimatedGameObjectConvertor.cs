@@ -210,6 +210,7 @@ namespace Cocos2Unity.Unity
                 BindAnimationCurves(rootNode, clip, subNode, timeline);
             }
             clip.EnsureQuaternionContinuity();
+            Debug_OptimizeAnimationClip(clip, rootNode);        // 优化动画
             return clip;
         }
 

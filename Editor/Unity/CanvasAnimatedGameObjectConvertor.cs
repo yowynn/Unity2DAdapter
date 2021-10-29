@@ -309,7 +309,7 @@ namespace Cocos2Unity.Unity
             for (int i = 0; i < count; i++)
             {
                 var curve = curves[i];
-                for (int j = 0; j < curve.keys.Length - 1; ++j)
+                for (int j = 0; j < curve.keys.Length; ++j)
                 {
                     var time = curve.keys[j].time;
                     if (mapTimeTransition.TryGetValue(time, out var transition))
@@ -346,25 +346,45 @@ namespace Cocos2Unity.Unity
 
         private static void SetFreeCubicBezier(AnimationCurve ac, int keyIndex, float x1, float y1, float x2, float y2)
         {
-            AnimationUtility.SetKeyBroken(ac, keyIndex, true);
-            AnimationUtility.SetKeyBroken(ac, keyIndex + 1, true);
-            AnimationUtility.SetKeyRightTangentMode(ac, keyIndex, AnimationUtility.TangentMode.Free);
-            AnimationUtility.SetKeyLeftTangentMode(ac, keyIndex + 1, AnimationUtility.TangentMode.Free);
-            var from = ac.keys[keyIndex];
-            var to = ac.keys[keyIndex + 1];
-            from.weightedMode = WeightedMode.Both;
-            to.weightedMode = WeightedMode.Both;
-            var scale = new Vector2(to.time - from.time, to.value - from.value);
-            if (scale.x > 0 && scale.y != 0)
+            if (keyIndex < 0 || keyIndex >= ac.length)
+                return;
+            bool isLastKey = keyIndex == ac.length - 1;
+
+            bool weighted1, weighted2;                          // 是否启用权重
+
+            var key1 = ac.keys[keyIndex];
+            var key2 = isLastKey ? key1 : ac.keys[keyIndex + 1];
+            var scaleX = key2.value - key1.value;
+            var scaleY = key2.time - key1.time;
+            if (scaleX > 0f && scaleY != 0f)
             {
-                var vfrom = new Vector2(x1, y1) * scale;
-                var vto = (new Vector2(x2, y2) - Vector2.one) * scale;
-                from.outTangent = vfrom.y / vfrom.x;
-                to.inTangent = vto.y / vto.x;
-                from.outWeight = x1;
-                to.inWeight = 1 - x2;
-                ac.MoveKey(keyIndex, from);
-                ac.MoveKey(keyIndex + 1, to);
+                var tangentScale = scaleX / scaleY;
+                key1.outTangent = (y1 - 0f) / (x1 - 0f) * tangentScale;
+                key2.inTangent = (y2 - 1f) / (x2 - 1f) * tangentScale;
+                key1.outWeight = x1 - 0f;
+                key2.inWeight = 1f - x2;
+                weighted1 = true;
+                weighted2 = true;
+            }
+            else
+            {
+                key1.outTangent = 0f;
+                key2.inTangent = 0f;
+                key1.outWeight = 0.25f;
+                key2.inWeight = 0.25f;
+                weighted1 = false;
+                weighted2 = false;
+            }
+            key1.weightedMode = weighted1 ? (key1.weightedMode | WeightedMode.Out) : (key1.weightedMode & ~WeightedMode.Out);
+            ac.MoveKey(keyIndex, key1);
+            AnimationUtility.SetKeyBroken(ac, keyIndex, true);
+            AnimationUtility.SetKeyRightTangentMode(ac, keyIndex, AnimationUtility.TangentMode.Free);
+            if (!isLastKey)
+            {
+                key2.weightedMode = weighted2 ? (key2.weightedMode | WeightedMode.In) : (key2.weightedMode & ~WeightedMode.In);
+                ac.MoveKey(keyIndex + 1, key2);
+                AnimationUtility.SetKeyBroken(ac, keyIndex + 1, true);
+                AnimationUtility.SetKeyLeftTangentMode(ac, keyIndex + 1, AnimationUtility.TangentMode.Free);
             }
         }
 
