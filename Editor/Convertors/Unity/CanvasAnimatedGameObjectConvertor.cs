@@ -359,11 +359,11 @@ namespace Cocos2Unity.Unity
 
             var key1 = ac.keys[keyIndex];
             var key2 = isLastKey ? key1 : ac.keys[keyIndex + 1];
-            var scaleX = key2.value - key1.value;
-            var scaleY = key2.time - key1.time;
+            var scaleX = key2.time - key1.time;
+            var scaleY = key2.value - key1.value;
             if (scaleX > 0f && scaleY != 0f)
             {
-                var tangentScale = scaleX / scaleY;
+                var tangentScale = scaleY / scaleX;
                 key1.outTangent = (y1 - 0f) / (x1 - 0f) * tangentScale;
                 key2.inTangent = (y2 - 1f) / (x2 - 1f) * tangentScale;
                 key1.outWeight = x1 - 0f;

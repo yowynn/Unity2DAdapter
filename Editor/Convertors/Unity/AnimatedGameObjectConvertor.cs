@@ -120,7 +120,7 @@ namespace Cocos2Unity.Unity
         protected Sprite GetSprite(string assetpath)
         {
             importedUnparsedAssetAssets.TryGetValue(assetpath, out var sprite);
-            ProcessLog.Log($"--Get Sprite: {assetpath}, {sprite as Sprite}");
+            // ProcessLog.Log($"--Get Sprite: {assetpath}, {sprite as Sprite}");
             return sprite as Sprite;
         }
 
@@ -373,9 +373,23 @@ namespace Cocos2Unity.Unity
                 var newkeys = new List<Keyframe>(keys);
                 for (int i = newkeys.Count - 2; i > 0; --i)
                 {
-                    if (newkeys[i].value == newkeys[i + 1].value &&newkeys[i].value == newkeys[i - 1].value)
+                    var key = newkeys[i];
+                    var prevKey = newkeys[i - 1];
+                    var nextKey = newkeys[i + 1];
+                    if (key.value == prevKey.value)
                     {
-                        newkeys.RemoveAt(i);
+                        if (key.value == nextKey.value)
+                        {
+                            // same value as previous key, same value as next key, remove this key
+                            newkeys.RemoveAt(i);
+                        }
+                        else if (key.outTangent == float.PositiveInfinity || key.outTangent == float.NegativeInfinity)
+                        {
+                            // same value as previous key, curve type is constant, remove this key
+                            prevKey.outTangent = newkeys[i].outTangent;
+                            newkeys[i - 1] = prevKey;
+                            newkeys.RemoveAt(i);
+                        }
                     }
                 }
                 beforeCount += keys.Length;
@@ -437,6 +451,7 @@ namespace Cocos2Unity.Unity
             atlas.Add(sprites.ToArray());
 
             SpriteAtlasPackingSettings packingSettings = atlas.GetPackingSettings();
+            // ! UI 的 Image 组件无法旋转图片，所以这里设置为 false
             packingSettings.enableRotation = false && spriteList.AllowRotation;     // force to disable rotation in UI Canvas
             packingSettings.padding = spriteList.SpritePadding;
             // ! 因为Unity的SpriteAtlas的Packing方式是按照图片的最大边进行排列，而不是按照图片的最小边进行排列，所以这里需要设置一下

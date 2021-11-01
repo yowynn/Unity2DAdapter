@@ -1,7 +1,8 @@
+using System.Collections.Generic;
+using System.IO;
 using Cocos2Unity.Util;
 using UnityEditor;
 using UnityEngine;
-using System.Collections.Generic;
 
 namespace Cocos2Unity
 {
@@ -22,10 +23,10 @@ namespace Cocos2Unity
 
         private static string DefaultOutPath => Application.dataPath + "/art/story";
 
-        [MenuItem("COCOS/Csd2UnityPrefab")]
+        [MenuItem("ToUnity2D/ConventCocoStudioProjects")]
         static void CreateWizard()
         {
-            var wzd = ScriptableWizard.DisplayWizard<Csd2UnityPrefab>("Create Prefab", "Create", "Apply");
+            var wzd = ScriptableWizard.DisplayWizard<Csd2UnityPrefab>("Convent CocoStudio Projects to Unity Animated Canvas Prefab", "Don't Click!", "Apply");
             wzd.OutputPath = DefaultOutPath;
         }
 
@@ -48,8 +49,7 @@ namespace Cocos2Unity
             // XmlAnalyze(@"C:\Users\Wynn\Desktop\book", "out/csd.xml", ".csd");
             // XmlAnalyze(@"C:\Users\Wynn\Desktop\book", "out/plist.xml", ".plist");
             // LoadPlist(@"P:\Gitlab\ihuman-ams\project-dev\cocos-demo\Assets\output\s0036_h001_siren_0.plist");
-            // Create();
-            ConventCsds();
+            ConventCocoStudioProjects();
         }
 
         public static void XmlAnalyze(string path, string outfile, string extention = null)
@@ -60,20 +60,13 @@ namespace Cocos2Unity
                 if (!FileSystem.IsFolder(f) && (extention == null || f.Extension.ToLower() == extention))
                 {
                     var srcfile = f.FullName;
-                    // Debug.Log(srcfile);
                     XmlUtil.Statistics(srcfile, outfile, true);
                 }
             });
         }
 
-        public void ConventCsds()
+        public void ConventCocoStudioProjects()
         {
-            // var pc = new Cocos2Unity<UINodeConvertor>();
-            // pc.RelativeSrcResPath = RelativeSrcResPath;
-            // pc.RelativeExpResPath = RelativeExpResPath;
-            // pc.isConvertCSD = true;
-            // pc.isConvertCSI = true;
-            // pc.Convert(InputPath, OutputPath);
             ProjectConvertor.Parser = new CocoStudio.Parser
             {
                 RelativeSrcResPath = RelativeSrcResPath,
@@ -82,10 +75,60 @@ namespace Cocos2Unity
                 IsConvertCSI = true,
             };
             ProjectConvertor.Convertor = new Unity.CanvasAnimatedGameObjectConvertor();
-            ProjectConvertor.Convert(InputPath, OutputPath);
 
+            var projects = EnumCocoStudioProjects(InputPath);
+            foreach (var project in projects)
+            {
+                ProjectConvertor.Convert(project.FindPath, OutputPath);
+            }
         }
 
-    }
+        private struct CocoStudioProjectInfo
+        {
+            public string Name;
+            public string Path;
+            public string FindPath;
+        }
 
+        private static CocoStudioProjectInfo[] EnumCocoStudioProjects(string path)
+        {
+            var list = new List<CocoStudioProjectInfo>();
+
+            // just part of one project
+            var found = false;
+            var parentpath = Path.GetDirectoryName(path);
+            while (parentpath != null && !found)
+            {
+                FileSystem.EnumPath(parentpath, f =>
+                {
+                    if (!FileSystem.IsFolder(f) && f.Extension.ToLower() == ".ccs" && !found)
+                    {
+                        CocoStudioProjectInfo info = new CocoStudioProjectInfo();
+                        info.Path = Path.GetDirectoryName(f.FullName);
+                        info.Name = Path.GetFileName(info.Path);
+                        info.FindPath = path;
+                        list.Add(info);
+                        found = true;
+                    }
+                }, false);
+                parentpath = Path.GetDirectoryName(parentpath);
+            }
+
+            if (!found)
+            {
+                FileSystem.EnumPath(path, f =>
+                {
+                    if (!FileSystem.IsFolder(f) && f.Extension.ToLower() == ".ccs")
+                    {
+                        CocoStudioProjectInfo info = new CocoStudioProjectInfo();
+                        info.Path = Path.GetDirectoryName(f.FullName);
+                        info.Name = Path.GetFileName(info.Path);
+                        info.FindPath = info.Path;
+                        list.Add(info);
+                    }
+                });
+            }
+            return list.ToArray();
+        }
+    }
 }

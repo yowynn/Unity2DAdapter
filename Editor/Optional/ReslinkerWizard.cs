@@ -8,7 +8,7 @@ namespace Cocos2Unity
 {
     public class ReslinkerWizard : ScriptableWizard
     {
-        [MenuItem("COCOS/Reslinker")]
+        [MenuItem("ToUnity2D/Reslinker")]
         static void CreateWizard()
         {
             var wzd = ScriptableWizard.DisplayWizard<Csd2UnityPrefab>("Link Res Used in Project JSON", "Create", "Apply");
@@ -30,11 +30,6 @@ namespace Cocos2Unity
             GenerateReslink();
         }
 
-        public string JsonFolder = @"C:\Users\Wynn\Desktop\book\story_0036\cocosstudio\scenes\story\0036\content\layout\page_1\s0036_h001_siren.csd";
-        public string[] FindInFolder = new string[]
-        {
-            @"Assets/art/story/story_0037",
-        };
         public Dictionary<string, string> FindExtension = new Dictionary<string, string>
         {
             {".mp3", ".mp3"},
