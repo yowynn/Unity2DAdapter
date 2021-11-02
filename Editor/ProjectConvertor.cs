@@ -81,8 +81,8 @@ namespace Cocos2Unity
                 }
             }
 
-            ProcessLog.Flush(Path.Combine(outputPath, "process.log"));
-            XmlAnalyzer.Flush(Path.Combine(outputPath, "analyser.xml"));
+            ProcessLog.Flush(Path.Combine(outputPath, $"{Parser.ProjectName}_process.log"));
+            XmlAnalyzer.Flush(Path.Combine(outputPath, $"{Parser.ProjectName}_analyse.xml"));
         }
     }
 }
