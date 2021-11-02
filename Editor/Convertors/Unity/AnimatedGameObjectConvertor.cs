@@ -143,6 +143,116 @@ namespace Cocos2Unity.Unity
             }
         }
 
+        protected void BindFloatCurves<T>(AnimationClip clip, ModCurve<T> origin, EditorCurveBinding[] bindings, Func<T, float[]> GetValues) where T : ModBase
+        {
+            var mapTimeTransition = new Dictionary<float, CubicBezier>();
+            var count = bindings.Length;
+            var curves = new AnimationCurve[count];
+            for (int i = 0; i < count; i++)
+            {
+                curves[i] = new AnimationCurve();
+            }
+            foreach (var frame in origin.KeyFrames)
+            {
+                var time = frame.Time;
+                var values = GetValues(frame.Value);
+                for (int i = 0; i < count; i++)
+                {
+                    var value = values[i];
+                    if (value != float.NaN)
+                    {
+                        curves[i].AddKey(time, value);
+                    }
+                }
+                mapTimeTransition.Add(time, frame.Transition);
+            }
+            for (int i = 0; i < count; i++)
+            {
+                var curve = curves[i];
+                for (int j = 0; j < curve.keys.Length; ++j)
+                {
+                    var time = curve.keys[j].time;
+                    if (mapTimeTransition.TryGetValue(time, out var transition))
+                    {
+                        SetFreeCubicBezier(curve, j, transition);
+                    }
+                }
+                AnimationUtility.SetEditorCurve(clip, bindings[i], curve);
+            }
+        }
+
+        protected void BindFloatCurve<T>(AnimationClip clip, ModCurve<T> origin, EditorCurveBinding binding, Func<T, float> GetValue) where T : ModBase
+        {
+            BindFloatCurves(clip, origin, new EditorCurveBinding[] { binding }, value => new float[] { GetValue(value) });
+        }
+
+        protected void BindObjectCurve<T>(AnimationClip clip, ModCurve<T> origin, EditorCurveBinding binding, Func<T, UnityEngine.Object> GetValue) where T : ModBase
+        {
+            var keys = new List<ObjectReferenceKeyframe>();
+            foreach (var frame in origin.KeyFrames)
+            {
+                var time = frame.Time;
+                var value = GetValue(frame.Value);
+                if (value != null)
+                {
+                    var key = new ObjectReferenceKeyframe();
+                    key.time = time;
+                    key.value = value;
+                    keys.Add(key);
+                }
+            }
+            AnimationUtility.SetObjectReferenceCurve(clip, binding, keys.ToArray());
+        }
+
+        protected static void SetFreeCubicBezier(AnimationCurve ac, int keyIndex, float x1, float y1, float x2, float y2)
+        {
+            if (keyIndex < 0 || keyIndex >= ac.length)
+                return;
+            bool isLastKey = keyIndex == ac.length - 1;
+
+            bool weighted1, weighted2;                          // 是否启用权重
+
+            var key1 = ac.keys[keyIndex];
+            var key2 = isLastKey ? key1 : ac.keys[keyIndex + 1];
+            var scaleX = key2.time - key1.time;
+            var scaleY = key2.value - key1.value;
+            if (scaleX > 0f && scaleY != 0f)
+            {
+                var tangentScale = scaleY / scaleX;
+                key1.outTangent = (y1 - 0f) / (x1 - 0f) * tangentScale;
+                key2.inTangent = (y2 - 1f) / (x2 - 1f) * tangentScale;
+                key1.outWeight = x1 - 0f;
+                key2.inWeight = 1f - x2;
+                weighted1 = true;
+                weighted2 = true;
+            }
+            else
+            {
+                key1.outTangent = 0f;
+                key2.inTangent = 0f;
+                key1.outWeight = 0.25f;
+                key2.inWeight = 0.25f;
+                weighted1 = false;
+                weighted2 = false;
+            }
+            key1.weightedMode = weighted1 ? (key1.weightedMode | WeightedMode.Out) : (key1.weightedMode & ~WeightedMode.Out);
+            ac.MoveKey(keyIndex, key1);
+            AnimationUtility.SetKeyBroken(ac, keyIndex, true);
+            AnimationUtility.SetKeyRightTangentMode(ac, keyIndex, AnimationUtility.TangentMode.Free);
+            if (!isLastKey)
+            {
+                key2.weightedMode = weighted2 ? (key2.weightedMode | WeightedMode.In) : (key2.weightedMode & ~WeightedMode.In);
+                ac.MoveKey(keyIndex + 1, key2);
+                AnimationUtility.SetKeyBroken(ac, keyIndex + 1, true);
+                AnimationUtility.SetKeyLeftTangentMode(ac, keyIndex + 1, AnimationUtility.TangentMode.Free);
+            }
+        }
+
+        protected static void SetFreeCubicBezier(AnimationCurve ac, int keyIndex, CubicBezier bezier)
+        {
+            SetFreeCubicBezier(ac, keyIndex, bezier.x1, bezier.y1, bezier.x2, bezier.y2);
+        }
+
         private GameObject CreateAndSaveGameObject(string fromAssetPath, NodePackage nodePackage)
         {
             var toAssetPath = Path.ChangeExtension(Path.Combine(OutputPath, fromAssetPath), ".prefab");
@@ -244,7 +354,7 @@ namespace Cocos2Unity.Unity
             {
                 var curve = AnimationUtility.GetEditorCurve(baseClip, binding);
                 var newkeys = new List<Keyframe>();
-                bool includeFromKey = false, includeToKey = false;
+                bool includeFromKey = false, includeToKey = timeFrom == timeTo;
                 foreach (var key in curve.keys)
                 {
                     if (key.time >= timeFrom && key.time <= timeTo)
@@ -257,6 +367,8 @@ namespace Cocos2Unity.Unity
                 if (!includeFromKey) newkeys.Insert(0, new Keyframe(timeFrom, curve.Evaluate(timeFrom)));
                 if (!includeToKey) newkeys.Add(new Keyframe(timeTo, curve.Evaluate(timeTo)));
                 var newCurve = new AnimationCurve(newkeys.ToArray());
+                if (!includeFromKey) SetFreeCubicBezier(newCurve, 0, CubicBezier.Linear);
+                if (!includeToKey) SetFreeCubicBezier(newCurve, newCurve.length - 2, CubicBezier.Linear);
                 AnimationUtility.SetEditorCurve(clip, binding, newCurve);
             }
             var objectBindings = AnimationUtility.GetObjectReferenceCurveBindings(baseClip);

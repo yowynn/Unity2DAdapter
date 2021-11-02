@@ -46,7 +46,7 @@ namespace Cocos2Unity.CocoStudio
             }
             catch (Exception e)
             {
-                MarkHandleError(assetpath, e.Message);
+                MarkHandleError(assetpath, e.ToString());
             }
             return nodePackage;
         }
@@ -61,7 +61,7 @@ namespace Cocos2Unity.CocoStudio
             }
             catch (Exception e)
             {
-                MarkHandleError(assetpath, e.Message);
+                MarkHandleError(assetpath, e.ToString());
             }
             return spriteList;
         }

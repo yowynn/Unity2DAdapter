@@ -8,6 +8,11 @@ namespace Cocos2Unity
 {
     public static class ProjectConvertor
     {
+        static ProjectConvertor()
+        {
+            ProcessLog.ErrorHandler += UnityEngine.Debug.LogError;
+            // ProcessLog.InfoHandler += UnityEngine.Debug.Log;
+        }
         public static IParser Parser { get; set; }
         public static IConvertor Convertor { get; set; }
 
@@ -50,7 +55,7 @@ namespace Cocos2Unity
                 }
                 catch (Exception e)
                 {
-                    ProcessLog.LogError($"Failed to import asset {assetpath}, {e.Message}");
+                    ProcessLog.LogError($"Failed to import asset {assetpath}, {e.ToString()}");
                 }
             }
             foreach (var assetpath in Parser.ParsedSpriteLists.Keys)
@@ -61,7 +66,7 @@ namespace Cocos2Unity
                 }
                 catch (Exception e)
                 {
-                    ProcessLog.LogError($"Failed to import asset {assetpath}, {e.Message}");
+                    ProcessLog.LogError($"Failed to import asset {assetpath}, {e.ToString()}");
                 }
             }
             foreach (var assetpath in Parser.ParsedNodePackages.Keys)
@@ -72,7 +77,7 @@ namespace Cocos2Unity
                 }
                 catch (Exception e)
                 {
-                    ProcessLog.LogError($"Failed to import asset {assetpath}, {e.Message}");
+                    ProcessLog.LogError($"Failed to import asset {assetpath}, {e.ToString()}");
                 }
             }
 

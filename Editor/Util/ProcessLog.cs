@@ -7,17 +7,23 @@ namespace Cocos2Unity.Util
 {
     public static class ProcessLog
     {
-        static StringBuilder sb = new StringBuilder();
+        private static StringBuilder sb = new StringBuilder();
+        public static event Action<string> ErrorHandler;
+        public static event Action<string> InfoHandler;
         public static void Log(string log)
         {
             var time = DateTime.Now.ToLongTimeString();
-            sb.AppendLine(string.Format("[{0}] {1}", time, log));
+            var msg = string.Format("[{0}] {1}", time, log);
+            sb.AppendLine(msg);
+            if (InfoHandler != null) InfoHandler(msg);
         }
 
         public static void LogError(string log)
         {
             var time = DateTime.Now.ToLongTimeString();
-            sb.AppendLine(string.Format("[{0}] ERROR: {1}", time, log));
+            var msg = string.Format("[{0}] ERROR: {1}", time, log);
+            sb.AppendLine(msg);
+            if (ErrorHandler != null) ErrorHandler(msg);
         }
         public static string Flush(string logfile = null)
         {
