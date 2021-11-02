@@ -9,7 +9,7 @@ namespace Cocos2Unity
     public class Csd2UnityPrefab : ScriptableWizard
     {
         [SerializeField, Tooltip("The FULL Path Import From - can be a file path or a project folder path")]
-        public string InputPath = @"C:\Users\Wynn\Desktop\book\story_0036\cocosstudio\scenes\story\0036\content\layout\page_1\s0036_h001_siren.csd";
+        public string InputPath = @"C:/Users/Wynn/Desktop/book/story_0037";
 
         [SerializeField, Tooltip("The FULL Path Export To - must under \"pathtoproject/Assets\"")]
         public string OutputPath = "";
@@ -18,8 +18,10 @@ namespace Cocos2Unity
         public string RelativeSrcResPath = "cocosstudio";
 
         [SerializeField, Tooltip("The RELATIVE Path To Find COCOS Export File (RELATIVE to COCOS Project)")]
-
         public string RelativeExpResPath = "res";
+
+        [SerializeField, Tooltip("use the project name as an additional parent path")]
+        public bool UseProjectNameAsParentPath = false;
 
         private static string DefaultOutPath => Application.dataPath + "/art/story";
 
@@ -79,7 +81,7 @@ namespace Cocos2Unity
             var projects = EnumCocoStudioProjects(InputPath);
             foreach (var project in projects)
             {
-                ProjectConvertor.Convert(project.FindPath, OutputPath);
+                ProjectConvertor.Convert(project.FindPath, OutputPath, UseProjectNameAsParentPath);
             }
         }
 
