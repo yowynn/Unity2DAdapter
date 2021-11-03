@@ -319,7 +319,8 @@ namespace Cocos2Unity.Unity
                 controller.AddParameter(name, AnimatorControllerParameterType.Trigger);
                 var transition = stateMachine.AddAnyStateTransition(state);
                 transition.AddCondition(AnimatorConditionMode.If, 1f, name);
-                transition.hasExitTime = true;
+                // ! 设置为 True 时，会导致动画切换不及时
+                transition.hasExitTime = false;
 
                 var animAssetPath = Path.ChangeExtension(rootNodeAssetPath, $"{name}.anim");
                 ProcessLog.Log($"-- * {animAssetPath}");

@@ -142,7 +142,9 @@ namespace Cocos2Unity.Unity
                     case "Color.A":
                         {
                             var origin = timeline.GetCurve<ModSingle>(propertyName);
-                            BindFloatCurve(clip, origin, GetBinding<Image>("m_Color.a"), val => val);
+                            if (!node.TryGetComponent<Cocos2Unity.Runtime.MeshTransform>(out var mt))
+                                mt = node.AddComponent<Cocos2Unity.Runtime.MeshTransform>();
+                            BindFloatCurve(clip, origin, GetBinding<Cocos2Unity.Runtime.MeshTransform>("m_Color.a"), val => val);
                         }
                         break;
                     default:
