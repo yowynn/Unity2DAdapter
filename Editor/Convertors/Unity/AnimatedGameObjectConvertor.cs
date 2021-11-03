@@ -309,7 +309,7 @@ namespace Cocos2Unity.Unity
                     convertedTimelines.Add(animation.AnimationAtlas, baseClip);
                 }
                 var state = stateMachine.AddState(name);
-                AnimationClip clip = CutAnimationClip(baseClip, animation.TimeFrom, animation.TimeTo);
+                AnimationClip clip = CutAnimationClip(baseClip, animation.TimeFrom, animation.TimeTo, name);
                 Debug_SetAnimationClipLoop(clip, true);
                 state.motion = clip;
                 if (!string.IsNullOrEmpty(defaultAnimationName) && name == defaultAnimationName)
@@ -344,7 +344,7 @@ namespace Cocos2Unity.Unity
             return clip;
         }
 
-        private AnimationClip CutAnimationClip(AnimationClip baseClip, float timeFrom, float timeTo)
+        private AnimationClip CutAnimationClip(AnimationClip baseClip, float timeFrom, float timeTo, string name = "")
         {
             var clip = new AnimationClip();
             clip.frameRate = baseClip.frameRate;
@@ -370,6 +370,10 @@ namespace Cocos2Unity.Unity
                 var newCurve = new AnimationCurve(newkeys.ToArray());
                 if (!includeFromKey) SetFreeCubicBezier(newCurve, 0, CubicBezier.Linear);
                 if (!includeToKey) SetFreeCubicBezier(newCurve, newCurve.length - 2, CubicBezier.Linear);
+
+                // ! if don't do this, the animation curve value will be wrong, WTF!!!
+                CutAnimationClip_FixCurve(newCurve);
+
                 AnimationUtility.SetEditorCurve(clip, binding, newCurve);
             }
             var objectBindings = AnimationUtility.GetObjectReferenceCurveBindings(baseClip);
@@ -393,7 +397,51 @@ namespace Cocos2Unity.Unity
                 var newCurve = newkeys.ToArray();
                 AnimationUtility.SetObjectReferenceCurve(clip, objectBinding, newCurve);
             }
+            AnimationClipOffset(clip, -timeFrom);
             return clip;
+        }
+
+        private void CutAnimationClip_FixCurve(AnimationCurve curve)
+        {
+            if (curve.length == 0) return;
+            var keys = curve.keys;
+            var firstKey = keys[0];
+            firstKey.weightedMode &= ~WeightedMode.In;
+            curve.MoveKey(0, firstKey);
+            var lastKey = keys[keys.Length - 1];
+            lastKey.weightedMode &= ~WeightedMode.Out;
+            curve.MoveKey(curve.length - 1, lastKey);
+        }
+
+        private void AnimationClipOffset(AnimationClip clip, float time)
+        {
+            if (time == 0) return;
+            var bindings = AnimationUtility.GetCurveBindings(clip);
+            foreach (var binding in bindings)
+            {
+                var curve = AnimationUtility.GetEditorCurve(clip, binding);
+                var keys = curve.keys;
+                for (int i = 0; i < keys.Length; i++)
+                {
+                    var key = keys[i];
+                    key.time += time;
+                    keys[i] = key;
+                }
+                curve.keys = keys;
+                AnimationUtility.SetEditorCurve(clip, binding, curve);
+            }
+            var objectBindings = AnimationUtility.GetObjectReferenceCurveBindings(clip);
+            foreach (var objectBinding in objectBindings)
+            {
+                var keys = AnimationUtility.GetObjectReferenceCurve(clip, objectBinding);
+                for (int i = 0; i < keys.Length; i++)
+                {
+                    var key = keys[i];
+                    key.time += time;
+                    keys[i] = key;
+                }
+                AnimationUtility.SetObjectReferenceCurve(clip, objectBinding, keys);
+            }
         }
 
         private static GameObject SearchNodeFromRoot(GameObject rootNode, ModNode node)
