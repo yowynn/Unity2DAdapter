@@ -129,12 +129,13 @@ namespace Cocos2Unity.Runtime
         protected override void Awake()
         {
             var pt = transform.parent as RectTransform;
-            if (pt != null)
+            if (pt != null && pt.TryGetComponent<MeshTransform>(out var mt))
             {
-                if (pt.TryGetComponent<MeshTransform>(out var mt))
-                {
-                    SyncInheritColor(mt.MixedColor);
-                }
+                SyncInheritColor(mt.MixedColor);
+            }
+            else
+            {
+                SyncInheritColor();
             }
         }
 
@@ -156,6 +157,6 @@ namespace Cocos2Unity.Runtime
                 graphic.SetVerticesDirty();
             }
         }
-    }
 #endif
+    }
 }
