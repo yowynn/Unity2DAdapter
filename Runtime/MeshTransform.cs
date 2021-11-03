@@ -38,6 +38,8 @@ namespace Cocos2Unity.Runtime
 
         private Color m_inheritColor = Color.white;
 
+        private Color m_oldMixedColor = Color.white;
+
         public Color MixedColor => m_Color * m_inheritColor;
         public GraphicOrientation Orientation { get => m_Orientation; set => m_Orientation = value; }
         public Vector2 Skew { get => m_Skew; set => m_Skew = value; }
@@ -96,8 +98,9 @@ namespace Cocos2Unity.Runtime
         public void SyncInheritColor()
         {
             var mixedColor = MixedColor;
-            if (mixedColor != Color.white)
+            if (mixedColor != m_oldMixedColor)
             {
+                m_oldMixedColor = mixedColor;
                 foreach (Transform t in gameObject.transform)
                 {
                     var rt = t as RectTransform;
