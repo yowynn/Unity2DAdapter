@@ -126,12 +126,16 @@ namespace Cocos2Unity.Unity
 
         protected GameObject GetGameObject(string assetpath = null)
         {
-            if (assetpath == null)
+            GameObject go = null;
+            if (assetpath != null && convertedNodePackages.TryGetValue(assetpath, out var prefab))
             {
-                return new GameObject();
+                go = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
             }
-            convertedNodePackages.TryGetValue(assetpath, out var gameObject);
-            return GameObject.Instantiate(gameObject);
+            if (go == null)
+            {
+                go = new GameObject();
+            }
+            return go;
         }
 
         protected void CreateAssetFolder(string assetpath)

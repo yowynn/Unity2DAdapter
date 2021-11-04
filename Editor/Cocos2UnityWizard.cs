@@ -35,6 +35,7 @@ namespace Cocos2Unity
         void OnWizardCreate()
         {
             // Create();
+            Test();
         }
 
         void OnWizardUpdate()
@@ -131,6 +132,10 @@ namespace Cocos2Unity
                 });
             }
             return list.ToArray();
+        }
+
+        static void Test()
+        {
         }
     }
 }
