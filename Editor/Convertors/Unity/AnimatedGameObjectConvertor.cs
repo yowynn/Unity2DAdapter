@@ -288,6 +288,7 @@ namespace Cocos2Unity.Unity
 
         private void BindAndSaveGameObjectAnimations(string rootNodeAssetPath, GameObject rootNode, IDictionary<string, ModNodeAnimation> animations, string defaultAnimationName = null)
         {
+            if (animations == null || animations.Count == 0) return;
             var controllerAssetPath = Path.ChangeExtension(rootNodeAssetPath, ".controller");
             ProcessLog.Log($"-- * {controllerAssetPath}");
             AnimatorController controller = AnimatorController.CreateAnimatorControllerAtPath(controllerAssetPath);
