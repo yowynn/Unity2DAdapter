@@ -3,9 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using UnityEngine.UI;
-using Cocos2Unity.Models;
+using Unity2DAdapter.Models;
 
-namespace Cocos2Unity
+namespace Unity2DAdapter
 {
     public class UINodeConvertor : Convertor
     {
@@ -52,9 +52,9 @@ namespace Cocos2Unity
             }
             if (skew != Vector2.zero)
             {
-                if (!go.TryGetComponent<Cocos2Unity.Runtime.MeshTransform>(out var mt))
+                if (!go.TryGetComponent<Unity2DAdapter.Runtime.MeshTransform>(out var mt))
                 {
-                    mt = go.AddComponent<Cocos2Unity.Runtime.MeshTransform>();
+                    mt = go.AddComponent<Unity2DAdapter.Runtime.MeshTransform>();
                 }
                 mt.Skew = skew;
             }
@@ -110,11 +110,11 @@ namespace Cocos2Unity
                     // var rt = image.GetComponent<RectTransform>();
                     // rt.sizeDelta = new Vector2(rt.sizeDelta.y, rt.sizeDelta.x);
                     // rt.pivot = new Vector2(rt.pivot.y, 1 - rt.pivot.x);
-                    if (!go.TryGetComponent<Cocos2Unity.Runtime.MeshTransform>(out var mt))
+                    if (!go.TryGetComponent<Unity2DAdapter.Runtime.MeshTransform>(out var mt))
                     {
-                        mt = go.AddComponent<Cocos2Unity.Runtime.MeshTransform>();
+                        mt = go.AddComponent<Unity2DAdapter.Runtime.MeshTransform>();
                     }
-                    mt.Orientation = Cocos2Unity.Runtime.GraphicOrientation.Left;
+                    mt.Orientation = Unity2DAdapter.Runtime.GraphicOrientation.Left;
                 }
             }
         }
@@ -141,9 +141,9 @@ namespace Cocos2Unity
             }
             else
             {
-                if (!go.TryGetComponent<Cocos2Unity.Runtime.MeshTransform>(out var mt))
+                if (!go.TryGetComponent<Unity2DAdapter.Runtime.MeshTransform>(out var mt))
                 {
-                    mt = go.AddComponent<Cocos2Unity.Runtime.MeshTransform>();
+                    mt = go.AddComponent<Unity2DAdapter.Runtime.MeshTransform>();
                 }
                 mt.Color = new Color(color.R, color.G, color.B, color.A);
             }
@@ -208,12 +208,12 @@ namespace Cocos2Unity
                 }));
                 if (hasSkew)
                 {
-                    if (!go.TryGetComponent<Cocos2Unity.Runtime.MeshTransform>(out var mt))
+                    if (!go.TryGetComponent<Unity2DAdapter.Runtime.MeshTransform>(out var mt))
                     {
-                        mt = go.AddComponent<Cocos2Unity.Runtime.MeshTransform>();
+                        mt = go.AddComponent<Unity2DAdapter.Runtime.MeshTransform>();
                     }
-                    AnimationUtility.SetEditorCurve(clip, GetBinding<Cocos2Unity.Runtime.MeshTransform>("m_Skew.x"), getFloatCurve(timeline.RotationSkew, val => SeparateRotationAndSkew(val).Skew.x));
-                    AnimationUtility.SetEditorCurve(clip, GetBinding<Cocos2Unity.Runtime.MeshTransform>("m_Skew.y"), getFloatCurve(timeline.RotationSkew, val => SeparateRotationAndSkew(val).Skew.y));
+                    AnimationUtility.SetEditorCurve(clip, GetBinding<Unity2DAdapter.Runtime.MeshTransform>("m_Skew.x"), getFloatCurve(timeline.RotationSkew, val => SeparateRotationAndSkew(val).Skew.x));
+                    AnimationUtility.SetEditorCurve(clip, GetBinding<Unity2DAdapter.Runtime.MeshTransform>("m_Skew.y"), getFloatCurve(timeline.RotationSkew, val => SeparateRotationAndSkew(val).Skew.y));
                 }
             }
             if (timeline.Scale != null)
@@ -240,11 +240,11 @@ namespace Cocos2Unity
                 }
                 else
                 {
-                    if (!go.TryGetComponent<Cocos2Unity.Runtime.MeshTransform>(out var mt))
+                    if (!go.TryGetComponent<Unity2DAdapter.Runtime.MeshTransform>(out var mt))
                     {
-                        mt = go.AddComponent<Cocos2Unity.Runtime.MeshTransform>();
+                        mt = go.AddComponent<Unity2DAdapter.Runtime.MeshTransform>();
                     }
-                    AnimationUtility.SetEditorCurve(clip, GetBinding<Cocos2Unity.Runtime.MeshTransform>("m_Color.a"), getFloatCurve(timeline.Color_Alpha, val => val));
+                    AnimationUtility.SetEditorCurve(clip, GetBinding<Unity2DAdapter.Runtime.MeshTransform>("m_Color.a"), getFloatCurve(timeline.Color_Alpha, val => val));
                 }
             }
 

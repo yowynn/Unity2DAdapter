@@ -9,7 +9,7 @@ using UnityEngine;
 using UnityEditor;
 using Object = UnityEngine.Object;
 
-namespace Cocos2Unity.Optional
+namespace Unity2DAdapter.Optional
 {
     public class ReslinkerWizard : ScriptableWizard
     {
@@ -17,13 +17,13 @@ namespace Cocos2Unity.Optional
 
         [SerializeField, Tooltip("Input Path, A File or A Folder.")]
         private string inputPath = "D:\\cocosStudio\\Assets\\ams\\plugin\\cocostudio\\Editor\\Optional\\input";
-        
+
         [SerializeField, Tooltip("Asset Path, A Folder contains the assets to be found.")]
         private string assetPath = "D:\\cocosStudio\\Assets\\art\\story";
 
         [SerializeField, Tooltip("Output Path, A Folder. Must be in the asset folder!")]
         private string outputPath = "D:\\cocosStudio\\Assets\\ams\\plugin\\cocostudio\\Editor\\Optional\\output";
-        
+
         [SerializeField, Tooltip("Name of the ReslinkAsset generated")]
         private string resName = "res";
 
@@ -106,7 +106,7 @@ namespace Cocos2Unity.Optional
                 {
                     return -1;
                 }
-                
+
                 int len = item.tag.Length;
                 int[] sortNum = new int[len];
                 int res = 0;
@@ -128,7 +128,7 @@ namespace Cocos2Unity.Optional
             newFilePath2 = newFilePath2.Replace("\\\\", "/").Trim();
             return newFilePath2;
         }
-        
+
         private string SetOutputPath(string path)
         {
             string output = "";

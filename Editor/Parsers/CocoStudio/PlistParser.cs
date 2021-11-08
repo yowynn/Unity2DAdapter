@@ -16,7 +16,7 @@ using System.Xml;
 using System.Xml.Linq;
 using System.Xml.XPath;
 
-namespace Cocos2Unity.CocoStudio
+namespace Unity2DAdapter.CocoStudio
 {
     public class PlistElement
     {

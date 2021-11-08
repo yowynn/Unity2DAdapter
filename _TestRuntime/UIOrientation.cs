@@ -1,7 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Cocos2Unity
+namespace Unity2DAdapter
 {
     [RequireComponent(typeof(Graphic))]
     public class UIOrientation : BaseMeshEffect

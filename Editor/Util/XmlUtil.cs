@@ -2,7 +2,7 @@
 using System.Xml;
 using System.IO;
 
-namespace Cocos2Unity.Util
+namespace Unity2DAdapter.Util
 {
     public class XmlUtil
     {

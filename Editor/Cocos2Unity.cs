@@ -2,10 +2,10 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using UnityEngine;
-using Cocos2Unity.Util;
+using Unity2DAdapter.Util;
 
 
-namespace Cocos2Unity
+namespace Unity2DAdapter
 {
     public class Cocos2Unity<TarConvertor> where TarConvertor : Convertor, new()
     {
@@ -157,7 +157,7 @@ namespace Cocos2Unity
                 var result = convertor.ConvertCsi(csi, false);
             }
             Debug.Log($"PROCESS PROJECT << {project.projectName}");
-            Cocos2Unity.CsdType.SwapAccessLog(OutFolder + "\\" + project.projectName + "_unhandled.xml");
+            Unity2DAdapter.CsdType.SwapAccessLog(OutFolder + "\\" + project.projectName + "_unhandled.xml");
         }
     }
 

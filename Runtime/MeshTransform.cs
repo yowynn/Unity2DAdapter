@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Cocos2Unity.Runtime
+namespace Unity2DAdapter.Runtime
 {
     /// <summary>
     /// 图像朝向

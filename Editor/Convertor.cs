@@ -2,13 +2,13 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Cocos2Unity.Util;
-using Cocos2Unity.CocoStudio;
+using Unity2DAdapter.Util;
+using Unity2DAdapter.CocoStudio;
 using UnityEngine;
 using UnityEditor;
 using UnityEditor.Animations;
 
-namespace Cocos2Unity
+namespace Unity2DAdapter
 {
     public abstract class Convertor
     {

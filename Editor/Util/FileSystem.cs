@@ -1,7 +1,7 @@
 ﻿using System;
 using System.IO;
 
-namespace Cocos2Unity.Util
+namespace Unity2DAdapter.Util
 {
     public class FileSystem
     {

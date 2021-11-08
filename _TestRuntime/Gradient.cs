@@ -5,7 +5,7 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine.UI;
 
-namespace Cocos2Unity
+namespace Unity2DAdapter
 {
     // [AddComponentMenu("UI/Effects/Gradient")]
     public class Gradient : BaseMeshEffect

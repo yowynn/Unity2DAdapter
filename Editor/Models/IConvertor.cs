@@ -1,6 +1,6 @@
 using System;
 
-namespace Cocos2Unity.Models
+namespace Unity2DAdapter.Models
 {
     public interface IConvertor
     {

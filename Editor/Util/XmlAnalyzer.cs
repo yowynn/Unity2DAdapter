@@ -1,7 +1,7 @@
 using System.Collections.Generic;
 using System.Xml;
 
-namespace Cocos2Unity.Util
+namespace Unity2DAdapter.Util
 {
     public static class XmlAnalyzer
     {

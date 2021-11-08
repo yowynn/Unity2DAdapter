@@ -3,7 +3,7 @@ using System;
 using System.Text;
 using System.IO;
 
-namespace Cocos2Unity.Util
+namespace Unity2DAdapter.Util
 {
     public static class ProcessLog
     {

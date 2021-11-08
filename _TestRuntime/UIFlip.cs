@@ -5,7 +5,7 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.UI;
 
-namespace Cocos2Unity
+namespace Unity2DAdapter
 {
     /// <summary>
     /// 图片简单变化

@@ -1,10 +1,10 @@
 using System.Collections.Generic;
 using System.IO;
-using Cocos2Unity.Util;
+using Unity2DAdapter.Util;
 using UnityEditor;
 using UnityEngine;
 
-namespace Cocos2Unity
+namespace Unity2DAdapter
 {
     public class Csd2UnityPrefab : ScriptableWizard
     {

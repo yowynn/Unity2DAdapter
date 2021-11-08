@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
-using Cocos2Unity.Models;
-using Cocos2Unity.Util;
+using Unity2DAdapter.Models;
+using Unity2DAdapter.Util;
 using UnityEngine;
 using UnityEngine.UI;
 using UnityEditor;
 
-namespace Cocos2Unity.Unity
+namespace Unity2DAdapter.Unity
 {
     public class CanvasAnimatedGameObjectConvertor : AnimatedGameObjectConvertor
     {
@@ -115,13 +115,13 @@ namespace Cocos2Unity.Unity
                                 GetBinding<RectTransform>("localEulerAnglesRaw.x"),
                                 GetBinding<RectTransform>("localEulerAnglesRaw.y"),
                                 GetBinding<RectTransform>("localEulerAnglesRaw.z"),
-                                GetBinding<Cocos2Unity.Runtime.MeshTransform>("m_Skew.x"),
-                                GetBinding<Cocos2Unity.Runtime.MeshTransform>("m_Skew.y"),
+                                GetBinding<Unity2DAdapter.Runtime.MeshTransform>("m_Skew.x"),
+                                GetBinding<Unity2DAdapter.Runtime.MeshTransform>("m_Skew.y"),
                             }, val =>
                             {
                                 if (!SeparateRotationAndSkew(val, out var rotation, out var skew))
-                                    if (!node.TryGetComponent<Cocos2Unity.Runtime.MeshTransform>(out var mt))
-                                        mt = node.AddComponent<Cocos2Unity.Runtime.MeshTransform>();
+                                    if (!node.TryGetComponent<Unity2DAdapter.Runtime.MeshTransform>(out var mt))
+                                        mt = node.AddComponent<Unity2DAdapter.Runtime.MeshTransform>();
                                 return new[]{
                                     rotation.x,
                                     rotation.y,
@@ -142,9 +142,9 @@ namespace Cocos2Unity.Unity
                     case "Color.A":
                         {
                             var origin = timeline.GetCurve<ModSingle>(propertyName);
-                            if (!node.TryGetComponent<Cocos2Unity.Runtime.MeshTransform>(out var mt))
-                                mt = node.AddComponent<Cocos2Unity.Runtime.MeshTransform>();
-                            BindFloatCurve(clip, origin, GetBinding<Cocos2Unity.Runtime.MeshTransform>("m_Color.a"), val => val);
+                            if (!node.TryGetComponent<Unity2DAdapter.Runtime.MeshTransform>(out var mt))
+                                mt = node.AddComponent<Unity2DAdapter.Runtime.MeshTransform>();
+                            BindFloatCurve(clip, origin, GetBinding<Unity2DAdapter.Runtime.MeshTransform>("m_Color.a"), val => val);
                         }
                         break;
                     default:
@@ -213,9 +213,9 @@ namespace Cocos2Unity.Unity
             }
             else
             {
-                if (!node.TryGetComponent<Cocos2Unity.Runtime.MeshTransform>(out var mt))
+                if (!node.TryGetComponent<Unity2DAdapter.Runtime.MeshTransform>(out var mt))
                 {
-                    mt = node.AddComponent<Cocos2Unity.Runtime.MeshTransform>();
+                    mt = node.AddComponent<Unity2DAdapter.Runtime.MeshTransform>();
                 }
                 mt.Skew = skewValue;
             }
@@ -259,9 +259,9 @@ namespace Cocos2Unity.Unity
             var tint = new Color(color.R, color.G, color.B, color.A);
             if (tint != Color.white)
             {
-                if (!node.TryGetComponent<Cocos2Unity.Runtime.MeshTransform>(out var mt))
+                if (!node.TryGetComponent<Unity2DAdapter.Runtime.MeshTransform>(out var mt))
                 {
-                    mt = node.AddComponent<Cocos2Unity.Runtime.MeshTransform>();
+                    mt = node.AddComponent<Unity2DAdapter.Runtime.MeshTransform>();
                 }
                 mt.Color = tint;
             }

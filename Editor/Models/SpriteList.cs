@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace Cocos2Unity.Models
+namespace Unity2DAdapter.Models
 {
     public class SpriteList
     {

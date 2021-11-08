@@ -5,7 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Runtime.Serialization.Formatters.Binary;
 using Spine;
 
-namespace Cocos2Unity.Optional
+namespace Unity2DAdapter.Optional
 {
     public class JsonParser
     {

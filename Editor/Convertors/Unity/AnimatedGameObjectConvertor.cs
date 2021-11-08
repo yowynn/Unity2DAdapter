@@ -2,15 +2,15 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using Cocos2Unity.Models;
-using Cocos2Unity.Util;
+using Unity2DAdapter.Models;
+using Unity2DAdapter.Util;
 using UnityEngine;
 using UnityEngine.U2D;
 using UnityEditor;
 using UnityEditor.U2D;
 using UnityEditor.Animations;
 
-namespace Cocos2Unity.Unity
+namespace Unity2DAdapter.Unity
 {
     public abstract class AnimatedGameObjectConvertor : IConvertor
     {

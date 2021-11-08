@@ -1,10 +1,10 @@
 using System;
 using System.IO;
-using Cocos2Unity.Models;
-using Cocos2Unity.Util;
+using Unity2DAdapter.Models;
+using Unity2DAdapter.Util;
 
 
-namespace Cocos2Unity
+namespace Unity2DAdapter
 {
     public static class ProjectConvertor
     {
