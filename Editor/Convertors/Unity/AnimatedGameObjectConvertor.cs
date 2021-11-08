@@ -304,6 +304,7 @@ namespace Cocos2Unity.Unity
             var stateMachine = controller.layers[0].stateMachine;
 
             var convertedTimelines = new Dictionary<ModNodeAnimationAtlas, AnimationClip>();
+            var clips = new Dictionary<string, AnimationClip>();
             foreach (var pair in animations)
             {
                 var name = pair.Key;
@@ -313,11 +314,27 @@ namespace Cocos2Unity.Unity
                     baseClip = CreateBindingAnimationClip(rootNode, animation.AnimationAtlas);
                     convertedTimelines.Add(animation.AnimationAtlas, baseClip);
                 }
-                var state = stateMachine.AddState(name);
                 AnimationClip clip = CutAnimationClip(baseClip, animation.TimeFrom, animation.TimeTo, name);
+                clips.Add(name, clip);
+                var animAssetPath = Path.ChangeExtension(rootNodeAssetPath, $"{name}.anim");
+                ProcessLog.Log($"-- * {animAssetPath}");
+                AssetDatabase.CreateAsset(clip, animAssetPath);
+            }
+            // ArrangeAnimatorStateMachine(controller, stateMachine, clips, defaultAnimationName);
+            Debug_ArrangeAnimatorStateMachineAdvanced(controller, stateMachine, clips, defaultAnimationName);
+            AssetDatabase.SaveAssets();                         // TODO: Check if this is needed
+        }
+
+        private void ArrangeAnimatorStateMachine(AnimatorController controller, AnimatorStateMachine stateMachine, Dictionary<string, AnimationClip> clips, string defaultClipName = null)
+        {
+            foreach (var pair in clips)
+            {
+                var name = pair.Key;
+                var clip = pair.Value;
                 Debug_SetAnimationClipLoop(clip, true);
+                var state = stateMachine.AddState(name);
                 state.motion = clip;
-                if (!string.IsNullOrEmpty(defaultAnimationName) && name == defaultAnimationName)
+                if (name == defaultClipName)
                 {
                     stateMachine.defaultState = state;
                 }
@@ -326,12 +343,50 @@ namespace Cocos2Unity.Unity
                 transition.AddCondition(AnimatorConditionMode.If, 1f, name);
                 // ! 设置为 True 时，会导致动画切换不及时
                 transition.hasExitTime = false;
-
-                var animAssetPath = Path.ChangeExtension(rootNodeAssetPath, $"{name}.anim");
-                ProcessLog.Log($"-- * {animAssetPath}");
-                AssetDatabase.CreateAsset(clip, animAssetPath);
             }
-            AssetDatabase.SaveAssets();                         // TODO: Check if this is needed
+        }
+
+        private void Debug_ArrangeAnimatorStateMachineAdvanced(AnimatorController controller, AnimatorStateMachine stateMachine, Dictionary<string, AnimationClip> clips, string defaultClipName = null)
+        {
+            AnimatorControllerParameter useDefaultParameter = new AnimatorControllerParameter{
+                type = AnimatorControllerParameterType.Bool,
+                defaultBool = true,
+                name = "UseDefault"
+            };
+            controller.AddParameter(useDefaultParameter);
+            AnimatorControllerParameter loopParameter = new AnimatorControllerParameter{
+                type = AnimatorControllerParameterType.Bool,
+                defaultBool = false,
+                name = "Loop"
+            };
+            controller.AddParameter(loopParameter);
+            var emptyState = stateMachine.AddState("Empty");
+            emptyState.motion = null;
+            stateMachine.defaultState = emptyState;
+
+            foreach (var pair in clips)
+            {
+                var name = pair.Key;
+                var clip = pair.Value;
+                Debug_SetAnimationClipLoop(clip, true);
+                var state = stateMachine.AddState(name);
+                state.motion = clip;
+                if (name == defaultClipName)
+                {
+                    var defaultTransition = emptyState.AddTransition(state);
+                    defaultTransition.AddCondition(AnimatorConditionMode.If, 1f, useDefaultParameter.name);
+                    defaultTransition.hasExitTime = false;
+                }
+                controller.AddParameter(name, AnimatorControllerParameterType.Trigger);
+                var anyStateTransition = stateMachine.AddAnyStateTransition(state);
+                anyStateTransition.AddCondition(AnimatorConditionMode.If, 1f, name);
+                anyStateTransition.hasExitTime = false;
+
+                var exitTransition = state.AddExitTransition(true);
+                exitTransition.AddCondition(AnimatorConditionMode.IfNot, 1f, loopParameter.name);
+                exitTransition.hasExitTime = false;
+                exitTransition.duration = 0f;
+            }
         }
 
         private AnimationClip CreateBindingAnimationClip(GameObject rootNode, ModNodeAnimationAtlas atlas)
