@@ -29,7 +29,7 @@ namespace Unity2DAdapter.Optional
 
         private List<FileItem> res = new List<FileItem>();
 
-        [MenuItem("ToUnity2D/Reslinker")]
+        [MenuItem("Unity2DAdapter/JSON Config Reslinker")]
         static void CreateWizard()
         {
             ScriptableWizard.DisplayWizard<ReslinkerWizard>("Link Res Used in Project JSON", "Create", "Apply");

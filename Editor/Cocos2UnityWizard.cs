@@ -25,7 +25,7 @@ namespace Unity2DAdapter
 
         private static string DefaultOutPath => Application.dataPath + "/art/story";
 
-        [MenuItem("ToUnity2D/ConventCocoStudioProjects")]
+        [MenuItem("Unity2DAdapter/CocoStudioProject → Unity Animated UGUI")]
         static void CreateWizard()
         {
             var wzd = ScriptableWizard.DisplayWizard<Csd2UnityPrefab>("Convent CocoStudio Projects to Unity Animated Canvas Prefab", "Don't Click!", "Apply");
@@ -40,8 +40,10 @@ namespace Unity2DAdapter
 
         void OnWizardUpdate()
         {
-            helpString = @"Convert COCOS `.csd` to UNITY `.prefab`
-            Convert COCOS `.plist` to UNITY multi-sprite";
+            helpString = @"this wizard does the following:
+Convert COCOS `.csd` to UNITY `.prefab`
+Convert COCOS `.csi` to UNITY `.spriteatlas`
+Import Used Png Files";
             InputPath = InputPath.Replace('\\', '/');
             OutputPath = OutputPath.Replace('\\', '/');
         }
