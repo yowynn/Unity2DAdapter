@@ -368,7 +368,7 @@ namespace Unity2DAdapter.Unity
             {
                 var name = pair.Key;
                 var clip = pair.Value;
-                Debug_SetAnimationClipLoop(clip, true);
+                // Debug_SetAnimationClipLoop(clip, true);
                 var state = stateMachine.AddState(name);
                 state.motion = clip;
                 if (name == defaultClipName)
@@ -382,10 +382,11 @@ namespace Unity2DAdapter.Unity
                 anyStateTransition.AddCondition(AnimatorConditionMode.If, 1f, name);
                 anyStateTransition.hasExitTime = false;
 
-                var exitTransition = state.AddExitTransition(true);
-                exitTransition.AddCondition(AnimatorConditionMode.IfNot, 1f, loopParameter.name);
-                exitTransition.hasExitTime = false;
-                exitTransition.duration = 0f;
+                var loopTransition = state.AddTransition(state);
+                loopTransition.AddCondition(AnimatorConditionMode.If, 1f, loopParameter.name);
+                loopTransition.hasExitTime = true;
+                loopTransition.duration = 0f;
+                loopTransition.exitTime = 1f;
             }
         }
 
