@@ -23,6 +23,10 @@ namespace Unity2DAdapter
         [SerializeField, Tooltip("use the project name as an additional parent path")]
         public bool UseProjectNameAsParentPath = false;
 
+        [SerializeField, Tooltip("don't re-import or re-convert exist target files")]
+        public bool SkipExistTarget = false;
+
+
         private static string DefaultOutPath => Application.dataPath + "/art/story";
 
         [MenuItem("Unity2DAdapter/CocoStudioProject → Unity Animated UGUI")]
@@ -79,7 +83,10 @@ Import Used Png Files";
                 IsConvertCSD = true,
                 IsConvertCSI = true,
             };
-            ProjectConvertor.Convertor = new Unity.CanvasAnimatedGameObjectConvertor();
+            ProjectConvertor.Convertor = new Unity.CanvasAnimatedGameObjectConvertor
+            {
+                SkipExistTarget = SkipExistTarget,
+            };
 
             var projects = EnumCocoStudioProjects(InputPath);
             foreach (var project in projects)

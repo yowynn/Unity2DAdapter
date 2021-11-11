@@ -109,6 +109,7 @@ namespace Unity2DAdapter.Unity
 
         # endregion
 
+        public bool SkipExistTarget { get; set; } = false;
         public string OutputPath { get; private set; }
         public string FullOutputPath { get; private set; }
         private Dictionary<string, UnityEngine.Object> importedUnparsedAssetAssets;
@@ -260,6 +261,16 @@ namespace Unity2DAdapter.Unity
         private GameObject CreateAndSaveGameObject(string fromAssetPath, NodePackage nodePackage)
         {
             var toAssetPath = Path.ChangeExtension(Path.Combine(OutputPath, fromAssetPath), ".prefab");
+            if (SkipExistTarget)
+            {
+                // load prefab from toAssetPath
+                var existPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(toAssetPath);
+                if (existPrefab != null)
+                {
+                    ProcessLog.Log($"-- * {toAssetPath} already exists");
+                    return existPrefab;
+                }
+            }
             GameObject rootNode = ConvertFromNode(nodePackage.RootNode);
             rootNode.name = nodePackage.Name;
             BindAndSaveGameObjectAnimations(toAssetPath, rootNode, nodePackage.Animations, nodePackage.DefaultAnimationName);
@@ -657,6 +668,15 @@ namespace Unity2DAdapter.Unity
         private SpriteAtlas CreateAndSaveSpriteAtlas(string fromAssetPath, SpriteList spriteList)
         {
             var toAssetPath = Path.ChangeExtension(Path.Combine(OutputPath, fromAssetPath), ".spriteatlas");
+            if (SkipExistTarget)
+            {
+                var existAtlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(toAssetPath);
+                if (existAtlas != null)
+                {
+                    ProcessLog.Log($"-- * {toAssetPath} already exists");
+                    return existAtlas;
+                }
+            }
             var atlas = new SpriteAtlas();
             atlas.name = spriteList.Name;
             List<Sprite> sprites = new List<Sprite>();
@@ -691,6 +711,16 @@ namespace Unity2DAdapter.Unity
         private Sprite ImportSprite(string fromAssetPath, string fromFullPath)
         {
             var toAssetPath = Path.Combine(OutputPath, fromAssetPath);
+            if (SkipExistTarget)
+            {
+                var existSprite = AssetDatabase.LoadAssetAtPath<Sprite>(toAssetPath);
+                if (existSprite != null)
+                {
+                    ProcessLog.Log($"-- * {toAssetPath} already exists");
+                    return existSprite;
+                }
+            }
+
             var toFullPath = Path.Combine(FullOutputPath, fromAssetPath);
             ProcessLog.Log($"-- * {toAssetPath}");
             File.Copy(fromFullPath, toFullPath, true);
