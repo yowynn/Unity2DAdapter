@@ -16,13 +16,13 @@ namespace Unity2DAdapter.Optional
         #region base
 
         [SerializeField, Tooltip("Input Path, A File or A Folder.")]
-        private string inputPath = "D:\\cocosStudio\\Assets\\ams\\plugin\\cocostudio\\Editor\\Optional\\input";
+        private string inputPath = @"Assets/input";
 
         [SerializeField, Tooltip("Asset Path, A Folder contains the assets to be found.")]
-        private string assetPath = "D:\\cocosStudio\\Assets\\art\\story";
+        private string assetPath = @"Assets/art/story";
 
         [SerializeField, Tooltip("Output Path, A Folder. Must be in the asset folder!")]
-        private string outputPath = "D:\\cocosStudio\\Assets\\ams\\plugin\\cocostudio\\Editor\\Optional\\output";
+        private string outputPath = @"Assets/output";
 
         [SerializeField, Tooltip("Name of the ReslinkAsset generated")]
         private string resName = "res";
@@ -48,12 +48,21 @@ namespace Unity2DAdapter.Optional
         void OnWizardUpdate()
         {
             helpString = @"Convert '.json' files to reslinkAsset";
+            inputPath = GetFullPath(inputPath);
+            assetPath = GetFullPath(assetPath);
+            outputPath = GetFullPath(outputPath);
         }
 
         // When the user presses the "Apply" button OnWizardOtherButton is called.
         void OnWizardOtherButton()
         {
-            this.Close();
+            OnWizardCreate();
+        }
+
+        public string GetFullPath(string path)
+        {
+            var fullpath = Path.GetFullPath(path).Replace('\\', '/');
+            return fullpath;
         }
 
         #endregion
@@ -89,9 +98,27 @@ namespace Unity2DAdapter.Optional
                 FileInfo fileInfo = new FileInfo(fullpath);
                 int index = fullpath.IndexOf("Assets/");
                 string unityPath = fullpath.Substring(index);
+                unityPath = MapFileType(unityPath);
                 obj = AssetDatabase.LoadAssetAtPath<Object>(unityPath);
                 return obj;
             }
+        }
+        Dictionary<string, string> maps = new Dictionary<string, string>
+        {
+            {".mp3", ".mp3"},
+            {".csb", ".prefab"},
+            {".png", ".png"},
+            {".plist", ".spriteatlas"},
+        };
+        string MapFileType(string filePath)
+        {
+            string fileType = Path.GetExtension(filePath);
+            if (maps.TryGetValue(fileType, out string value))
+            {
+                filePath = Path.ChangeExtension(filePath, value);
+            }
+            Debug.Log($"path: {filePath}");
+            return filePath;
         }
 
         void SortListBySuffix()

@@ -12,7 +12,7 @@ namespace Unity2DAdapter
         public string InputPath = @"C:/Users/Wynn/Desktop/book/story_0037";
 
         [SerializeField, Tooltip("The FULL Path Export To - must under \"pathtoproject/Assets\"")]
-        public string OutputPath = "";
+        public string OutputPath = @"Assets/art/story";
 
         [SerializeField, Tooltip("The RELATIVE Path To Find COCOS Source File (RELATIVE to COCOS Project)")]
         public string RelativeSrcResPath = "cocosstudio";
@@ -27,13 +27,10 @@ namespace Unity2DAdapter
         public bool SkipExistTarget = false;
 
 
-        private static string DefaultOutPath => Application.dataPath + "/art/story";
-
         [MenuItem("Unity2DAdapter/CocoStudioProject → Unity Animated UGUI")]
         static void CreateWizard()
         {
             var wzd = ScriptableWizard.DisplayWizard<Csd2UnityPrefab>("Convent CocoStudio Projects to Unity Animated Canvas Prefab", "Don't Click!", "Apply");
-            wzd.OutputPath = DefaultOutPath;
         }
 
         void OnWizardCreate()
@@ -48,8 +45,8 @@ namespace Unity2DAdapter
 Convert COCOS `.csd` to UNITY `.prefab`
 Convert COCOS `.csi` to UNITY `.spriteatlas`
 Import Used Png Files";
-            InputPath = InputPath.Replace('\\', '/');
-            OutputPath = OutputPath.Replace('\\', '/');
+            InputPath = GetFullPath(InputPath);
+            OutputPath = GetFullPath(OutputPath);
         }
 
         // When the user presses the "Apply" button OnWizardOtherButton is called.
@@ -72,6 +69,12 @@ Import Used Png Files";
                     XmlUtil.Statistics(srcfile, outfile, true);
                 }
             });
+        }
+
+        public string GetFullPath(string path)
+        {
+            var fullpath = Path.GetFullPath(path).Replace('\\', '/');
+            return fullpath;
         }
 
         public void ConventCocoStudioProjects()
