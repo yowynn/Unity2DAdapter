@@ -16,16 +16,16 @@ namespace Unity2DAdapter.Optional
         #region base
 
         [SerializeField, Tooltip("Input Path, A File or A Folder.")]
-        private string inputPath = @"Assets/input";
+        private string inputPath = @"Assets/dev/story/001/json";
 
         [SerializeField, Tooltip("Asset Path, A Folder contains the assets to be found.")]
         private string assetPath = @"Assets/art/story";
 
         [SerializeField, Tooltip("Output Path, A Folder. Must be in the asset folder!")]
-        private string outputPath = @"Assets/output";
+        private string outputPath = @"Assets/dev/story/001";
 
         [SerializeField, Tooltip("Name of the ReslinkAsset generated")]
-        private string resName = "res";
+        private string resName = "resource";
 
         private List<FileItem> res = new List<FileItem>();
 
@@ -92,18 +92,18 @@ namespace Unity2DAdapter.Optional
             string fullpath = $"{assetPath}/{filePath}";
             fullpath = fullpath.Replace("//", "/");
             fullpath = fullpath.Replace(@"\", "/");
+            fullpath = MapFileType(fullpath);
             if (!File.Exists(fullpath)) return obj;
             else
             {
                 FileInfo fileInfo = new FileInfo(fullpath);
                 int index = fullpath.IndexOf("Assets/");
                 string unityPath = fullpath.Substring(index);
-                unityPath = MapFileType(unityPath);
-                obj = AssetDatabase.LoadAssetAtPath<Object>(unityPath);
+                obj = GetAsset(unityPath);
                 return obj;
             }
         }
-        Dictionary<string, string> maps = new Dictionary<string, string>
+        Dictionary<string, string> ExtensionMaps = new Dictionary<string, string>
         {
             {".mp3", ".mp3"},
             {".csb", ".prefab"},
@@ -113,12 +113,33 @@ namespace Unity2DAdapter.Optional
         string MapFileType(string filePath)
         {
             string fileType = Path.GetExtension(filePath);
-            if (maps.TryGetValue(fileType, out string value))
+            if (ExtensionMaps.TryGetValue(fileType, out string value))
             {
                 filePath = Path.ChangeExtension(filePath, value);
             }
-            Debug.Log($"path: {filePath}");
+            // Debug.Log($"path: {filePath}");
             return filePath;
+        }
+
+        Dictionary<string, Type> TypeMaps = new Dictionary<string, Type>
+        {
+            {".mp3", typeof(AudioClip)},
+            {".csb", typeof(GameObject)},
+            {".png", typeof(Sprite)},
+            {".plist", typeof(UnityEngine.U2D.SpriteAtlas)},
+        };
+
+        Object GetAsset(string assetPath)
+        {
+            string fileType = Path.GetExtension(assetPath);
+            if (TypeMaps.TryGetValue(fileType, out Type type))
+            {
+                return AssetDatabase.LoadAssetAtPath(assetPath, type);
+            }
+            else
+            {
+                return AssetDatabase.LoadAssetAtPath(assetPath, typeof(Object));
+            }
         }
 
         void SortListBySuffix()
