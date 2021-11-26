@@ -80,7 +80,7 @@ namespace Unity2DAdapter
                     ProcessLog.LogError($"Failed to import asset {assetpath}, {e.ToString()}");
                 }
             }
-
+            System.IO.File.Delete(Path.Combine(outputPath, $"{Parser.ProjectName}_process.log"));
             ProcessLog.Flush(Path.Combine(outputPath, $"{Parser.ProjectName}_process.log"));
             XmlAnalyzer.Flush(Path.Combine(outputPath, $"{Parser.ProjectName}_analyse.xml"));
         }

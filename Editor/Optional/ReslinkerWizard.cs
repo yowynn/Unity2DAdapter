@@ -16,13 +16,13 @@ namespace Unity2DAdapter.Optional
         #region base
 
         [SerializeField, Tooltip("Input Path, A File or A Folder.")]
-        private string inputPath = @"Assets/dev/story/001/json";
+        private string inputPath = @"Assets/dev/story/0001/json";
 
         [SerializeField, Tooltip("Asset Path, A Folder contains the assets to be found.")]
         private string assetPath = @"Assets/art/story";
 
         [SerializeField, Tooltip("Output Path, A Folder. Must be in the asset folder!")]
-        private string outputPath = @"Assets/dev/story/001";
+        private string outputPath = @"Assets/dev/story/0001";
 
         [SerializeField, Tooltip("Name of the ReslinkAsset generated")]
         private string resName = "resource";
