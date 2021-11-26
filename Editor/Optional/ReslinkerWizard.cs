@@ -37,6 +37,7 @@ namespace Unity2DAdapter.Optional
 
         void OnWizardCreate()
         {
+            res.Clear();
             inputPath = inputPath.Replace("/", "\\");
             outputPath = outputPath.Replace("/", "\\");
             GetFiles(inputPath);
