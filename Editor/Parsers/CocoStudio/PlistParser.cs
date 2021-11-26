@@ -195,7 +195,7 @@ namespace Unity2DAdapter.CocoStudio
         internal static XDocument ParseXmlNoDtd(string text)
         {
             XmlReaderSettings settings = new XmlReaderSettings();
-            settings.ProhibitDtd = false;
+            settings.DtdProcessing = DtdProcessing.Parse;       // prevent DTD parsing
             settings.XmlResolver = null; // prevent DTD download
 
             XmlReader xmlReader = XmlReader.Create(new StringReader(text), settings);
