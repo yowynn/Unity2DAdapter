@@ -437,8 +437,8 @@ namespace Unity2DAdapter.Unity
                         includeToKey |= key.time == timeTo;
                     }
                 }
-                if (!includeFromKey) newkeys.Insert(0, new Keyframe(timeFrom, curve.Evaluate(timeFrom)));
-                if (!includeToKey) newkeys.Add(new Keyframe(timeTo, curve.Evaluate(timeTo)));
+                if (!includeFromKey) newkeys.Insert(0, GetEvaluatedKeyFrame(curve, timeFrom, true, out includeFromKey));
+                if (!includeToKey) newkeys.Add(GetEvaluatedKeyFrame(curve, timeTo, false, out includeToKey));
                 var newCurve = new AnimationCurve(newkeys.ToArray());
                 if (!includeFromKey) SetFreeCubicBezier(newCurve, 0, CubicBezier.Linear);
                 if (!includeToKey) SetFreeCubicBezier(newCurve, newCurve.length - 2, CubicBezier.Linear);
@@ -471,6 +471,37 @@ namespace Unity2DAdapter.Unity
             }
             AnimationClipOffset(clip, -timeFrom);
             return clip;
+        }
+
+        private Keyframe GetEvaluatedKeyFrame(AnimationCurve curve, float time, bool findForward, out bool found)
+        {
+            float value = curve.Evaluate(time);
+            found = false;
+            Keyframe newkey = new Keyframe(time, value);
+            foreach (var key in curve.keys)
+            {
+                if (findForward)
+                {
+                    if (key.time <= time && (!found || key.time >= newkey.time))
+                    {
+                        found = true;
+                        newkey = key;
+                    }
+                }
+                else
+                {
+                    if (key.time >= time && (!found || key.time <= newkey.time))
+                    {
+                        found = true;
+                        newkey = key;
+                    }
+                }
+            }
+            if (found)
+            {
+                newkey.value = value;
+            }
+            return newkey;
         }
 
         private void CutAnimationClip_FixCurve(AnimationCurve curve)
