@@ -27,7 +27,7 @@ namespace Unity2DAdapter
         public bool SkipExistTarget = false;
 
 
-        [MenuItem("Unity2DAdapter/CocoStudioProject → Unity Animated UGUI")]
+        [MenuItem("DevTool/Unity2DAdapter/CocoStudioProject → Unity Animated UGUI")]
         static void CreateWizard()
         {
             var wzd = ScriptableWizard.DisplayWizard<Csd2UnityPrefab>("Convent CocoStudio Projects to Unity Animated Canvas Prefab", "Don't Click!", "Apply");

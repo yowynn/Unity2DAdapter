@@ -25,7 +25,7 @@ namespace Unity2DAdapter.Optional
         }
 
 
-        [MenuItem("Unity2DAdapter/Image Size Compression")]
+        [MenuItem("DevTool/Unity2DAdapter/Image Size Compression")]
         static void CreateWizard()
         {
             var wzd = ImageSizeCompression.DisplayWizard<ImageSizeCompression>("Image Size Compression", "Don't Click!", "Apply");
