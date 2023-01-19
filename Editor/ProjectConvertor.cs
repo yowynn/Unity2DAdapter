@@ -62,7 +62,7 @@ namespace Unity2DAdapter
             {
                 try
                 {
-                    Convertor.ConvertSpriteList(assetpath, p => Parser.ParsedSpriteLists[p]);
+                    Convertor.ConvertSpriteList(assetpath, p => Parser.ParsedSpriteLists.TryGetValue(p, out var v) ? v : null);
                 }
                 catch (Exception e)
                 {
@@ -73,7 +73,7 @@ namespace Unity2DAdapter
             {
                 try
                 {
-                    Convertor.ConvertNodePackage(assetpath, p => Parser.ParsedNodePackages[p]);
+                    Convertor.ConvertNodePackage(assetpath, p => Parser.ParsedNodePackages.TryGetValue(p, out var v) ? v : null);
                 }
                 catch (Exception e)
                 {
