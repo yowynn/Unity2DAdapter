@@ -22,7 +22,7 @@ namespace Unity2DAdapter.Unity
             NodePackage nodePackage = GetNodePackage(assetpath);
             if (nodePackage == null)
             {
-                ProcessLog.LogError("Can't find the NodePackage" + assetpath);
+                ProcessLog.LogError("Can't find the NodePackage: " + assetpath);
                 return;
             }
             if (convertedNodePackages.ContainsKey(assetpath))
@@ -120,17 +120,33 @@ namespace Unity2DAdapter.Unity
         protected abstract void BindAnimationCurves(GameObject root, AnimationClip clip, GameObject node, ModTimeline<ModNode> timeline);
         protected Sprite GetSprite(string assetpath)
         {
-            importedUnparsedAssetAssets.TryGetValue(assetpath, out var sprite);
-            // ProcessLog.Log($"--Get Sprite: {assetpath}, {sprite as Sprite}");
-            return sprite as Sprite;
+            importedUnparsedAssetAssets.TryGetValue(assetpath, out var o);
+            var sprite = o as Sprite;
+            // ProcessLog.Log($"--Get Sprite: {assetpath}, {sprite}");
+            if (sprite == null)
+            {
+                var unityPath = Path.Combine(OutputPath, assetpath);
+                sprite = AssetDatabase.LoadAssetAtPath<Sprite>(unityPath);
+                ProcessLog.Log($"?? * Attempt Use Exist Asset {(sprite == null ? "Fail" : "Succ")}: {assetpath} ({unityPath})");
+            }
+            return sprite;
         }
 
         protected GameObject GetGameObject(string assetpath = null)
         {
             GameObject go = null;
-            if (assetpath != null && convertedNodePackages.TryGetValue(assetpath, out var prefab))
+            if (assetpath != null)
             {
-                go = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+                if (!convertedNodePackages.TryGetValue(assetpath, out var prefab))
+                {
+                    var unityPath = Path.ChangeExtension(Path.Combine(OutputPath, assetpath), ".prefab");
+                    prefab = AssetDatabase.LoadAssetAtPath<GameObject>(unityPath);
+                    ProcessLog.Log($"?? * Attempt Use Exist Asset {(prefab == null ? "Fail" : "Succ")}: {assetpath} ({unityPath})");
+                }
+                if (prefab != null)
+                {
+                    go = PrefabUtility.InstantiatePrefab(prefab) as GameObject;
+                }
             }
             if (go == null)
             {
