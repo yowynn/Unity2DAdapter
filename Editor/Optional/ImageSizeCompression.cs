@@ -5,6 +5,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.U2D;
 using UnityEditor.U2D;
+using Spine;
 
 
 namespace Unity2DAdapter.Optional
@@ -34,6 +35,12 @@ namespace Unity2DAdapter.Optional
         [SerializeField, Tooltip("设置图片导入的MaxSize")]
         public CompressMaxSize MaxSize = CompressMaxSize._1024;
 
+        [SerializeField, Tooltip("是否处理 Texture2D")]
+        public bool HandleTexture2Ds = false;
+
+        [SerializeField, Tooltip("是否处理 SpriteAtlas")]
+        public bool HandleSpriteAtlases = true;
+
 
         void OnWizardCreate()
         {
@@ -48,28 +55,52 @@ namespace Unity2DAdapter.Optional
         // When the user presses the "Apply" button OnWizardOtherButton is called.
         void OnWizardOtherButton()
         {
-            var textures = GetObjectsFromSelection<Texture2D>();
-            foreach (Texture2D texture in textures)
+            if (HandleTexture2Ds)
             {
-                SetTextureImporterFormat(texture);
+                var textures = GetAllAssetPathsFromSelection<Texture2D>();
+                foreach (string texture in textures)
+                {
+                    SetTextureImporterFormat(texture);
+                }
+                Debug.Log($"Handle {textures.Length} Texture2Ds~");
             }
-            var atlases = GetObjectsFromSelection<SpriteAtlas>();
-            foreach (SpriteAtlas atlas in atlases)
+            if (HandleSpriteAtlases)
             {
-                SetSpriteAtlasFormat(atlas);
+                var atlases = GetAllAssetPathsFromSelection<SpriteAtlas>();
+                foreach (string atlas in atlases)
+                {
+                    SetSpriteAtlasFormat(atlas);
+                }
+                Debug.Log($"Handle {atlases.Length} SpriteAtlases~");
             }
         }
 
-        private Object[] GetObjectsFromSelection<T>()
+        private string[] GetAllAssetPathsFromSelection<T>()
         {
-            var objects = Selection.GetFiltered(typeof(T), SelectionMode.DeepAssets);
-            return objects;
+            var type = typeof(T);
+            var selectGuids = Selection.assetGUIDs;
+            var paths = new string[selectGuids.Length];
+            for (var i = 0; i < selectGuids.Length; i++)
+            {
+                paths[i] = AssetDatabase.GUIDToAssetPath(selectGuids[i]);
+            }
+            var founds = AssetDatabase.FindAssets($"t:{type.Name}", paths);
+            var assetPaths = new string[founds.Length];
+            for(var i = 0; i < assetPaths.Length; i++)
+            {
+                assetPaths[i] = AssetDatabase.GUIDToAssetPath(founds[i]);
+            }
+            return assetPaths;
         }
 
-        private void SetTextureImporterFormat(Texture2D texture)
+        private void SetTextureImporterFormat(string path)
         {
-            var path = AssetDatabase.GetAssetPath(texture);
             var importer = AssetImporter.GetAtPath(path) as TextureImporter;
+            if (importer == null)
+            {
+                Debug.LogError(path);
+                return;
+            }
             TextureImporterPlatformSettings settings = importer.GetDefaultPlatformTextureSettings();
             if (settings.maxTextureSize > (int)MaxSize)
             {
@@ -80,14 +111,19 @@ namespace Unity2DAdapter.Optional
             }
         }
 
-        private void SetSpriteAtlasFormat(SpriteAtlas atlas)
+        private void SetSpriteAtlasFormat(string path)
         {
+            var atlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(path);
+            if (atlas == null)
+            {
+                Debug.LogError(path);
+                return;
+            }
             TextureImporterPlatformSettings settings = atlas.GetPlatformSettings("DefaultTexturePlatform");
             if (settings.maxTextureSize > (int)MaxSize)
             {
                 settings.maxTextureSize = (int)MaxSize;
                 atlas.SetPlatformSettings(settings);
-                // AssetDatabase.CreateAsset(atlas, AssetDatabase.GetAssetPath(atlas));
                 AssetDatabase.SaveAssets();
                 Debug.Log("Set SpriteAtlasFormat: " + atlas.name);
             }
