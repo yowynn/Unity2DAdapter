@@ -23,8 +23,16 @@ namespace Unity2DAdapter
         [SerializeField, Tooltip("use the project name as an additional parent path")]
         public bool UseProjectNameAsParentPath = false;
 
-        [SerializeField, Tooltip("don't re-import or re-convert exist target files")]
-        public bool SkipExistTarget = false;
+        [SerializeField, Tooltip("don't re-import or re-convert exist prefab files")]
+        public bool SkipExistPrefab = false;
+
+        [SerializeField, Tooltip("don't re-import or re-convert exist spriteatlas files")]
+        public bool SkipExistSpriteAtlas = false;
+
+        [SerializeField, Tooltip("don't re-import or re-convert exist sprite files")]
+        public bool SkipExistSprite = false;
+
+
 
 
         [MenuItem("DevTool/Unity2DAdapter/CocoStudioProject → Unity Animated UGUI")]
@@ -88,7 +96,9 @@ Import Used Png Files";
             };
             ProjectConvertor.Convertor = new Unity.CanvasAnimatedGameObjectConvertor
             {
-                SkipExistTarget = SkipExistTarget,
+                SkipExistPrefab = SkipExistPrefab,
+                SkipExistSpriteAtlas = SkipExistSpriteAtlas,
+                SkipExistSprite = SkipExistSprite,
             };
 
             var projects = EnumCocoStudioProjects(InputPath);

@@ -109,7 +109,9 @@ namespace Unity2DAdapter.Unity
 
         # endregion
 
-        public bool SkipExistTarget { get; set; } = false;
+        public bool SkipExistPrefab { get; set; } = false;
+        public bool SkipExistSpriteAtlas { get; set; } = false;
+        public bool SkipExistSprite { get; set; } = false;
         public string OutputPath { get; private set; }
         public string FullOutputPath { get; private set; }
         private Dictionary<string, UnityEngine.Object> importedUnparsedAssetAssets;
@@ -277,7 +279,7 @@ namespace Unity2DAdapter.Unity
         private GameObject CreateAndSaveGameObject(string fromAssetPath, NodePackage nodePackage)
         {
             var toAssetPath = Path.ChangeExtension(Path.Combine(OutputPath, fromAssetPath), ".prefab");
-            if (SkipExistTarget)
+            if (SkipExistPrefab)
             {
                 // load prefab from toAssetPath
                 var existPrefab = AssetDatabase.LoadAssetAtPath<GameObject>(toAssetPath);
@@ -293,7 +295,7 @@ namespace Unity2DAdapter.Unity
             ProcessLog.Log($"-- * {toAssetPath}");
             var prefab = PrefabUtility.SaveAsPrefabAssetAndConnect(rootNode, toAssetPath, InteractionMode.AutomatedAction);
             GameObject.DestroyImmediate(rootNode);
-            Debug_AddPrefabToSceneCanvas(prefab, toAssetPath);
+            // Debug_AddPrefabToSceneCanvas(prefab, toAssetPath);
             return prefab;
         }
 
@@ -715,7 +717,7 @@ namespace Unity2DAdapter.Unity
         private SpriteAtlas CreateAndSaveSpriteAtlas(string fromAssetPath, SpriteList spriteList)
         {
             var toAssetPath = Path.ChangeExtension(Path.Combine(OutputPath, fromAssetPath), ".spriteatlas");
-            if (SkipExistTarget)
+            if (SkipExistSpriteAtlas)
             {
                 var existAtlas = AssetDatabase.LoadAssetAtPath<SpriteAtlas>(toAssetPath);
                 if (existAtlas != null)
@@ -758,7 +760,7 @@ namespace Unity2DAdapter.Unity
         private Sprite ImportSprite(string fromAssetPath, string fromFullPath)
         {
             var toAssetPath = Path.Combine(OutputPath, fromAssetPath);
-            if (SkipExistTarget)
+            if (SkipExistSprite)
             {
                 var existSprite = AssetDatabase.LoadAssetAtPath<Sprite>(toAssetPath);
                 if (existSprite != null)
