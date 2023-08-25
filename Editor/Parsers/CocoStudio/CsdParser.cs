@@ -76,7 +76,7 @@ namespace Unity2DAdapter.CocoStudio
                 parent.AddChild(TARGET);
             }
             TARGET.Name = node.GetStringAttribute("Name");
-            TARGET.Visible = node.GetBoolAttribute("VisibleForFrame", true);
+            TARGET.Visible = node.GetBoolAttribute("VisibleForFrame", true) && node.GetBoolAttribute("Visible", true);          // 兼容不同版本的CSD文件
             TARGET.Interactive = node.GetBoolAttribute("TouchEnable", false);
             TARGET.Rect = ParseNodeRect(node);
             TARGET.Pivot = ParseNodePivot(node);
