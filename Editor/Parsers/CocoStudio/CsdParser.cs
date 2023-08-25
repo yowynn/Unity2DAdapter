@@ -197,6 +197,7 @@ namespace Unity2DAdapter.CocoStudio
                     TARGET = new ModFiller(ModFiller.ModType.Color, Color);
                     break;
                 case "SpriteObjectData":
+                case "ImageViewObjectData":
                     // fill sprite
                     ModLinkedAsset Sprite = ParseNodeFillerSprite(node);
                     TARGET = new ModFiller(ModFiller.ModType.Sprite, Sprite);
