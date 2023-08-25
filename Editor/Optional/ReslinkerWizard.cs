@@ -85,6 +85,7 @@ namespace Unity2DAdapter.Optional
                 resLinkAsset.assets.Add(item);
             }
             AssetDatabase.CreateAsset(resLinkAsset, outputFile);
+            ResLinkEditor.Save(resLinkAsset);
         }
 
         UnityEngine.Object GenerateAseetObject(string filePath)
