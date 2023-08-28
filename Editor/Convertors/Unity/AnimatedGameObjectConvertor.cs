@@ -436,6 +436,7 @@ namespace Unity2DAdapter.Unity
 
         private AnimationClip CutAnimationClip(AnimationClip baseClip, float timeFrom, float timeTo, string name = "")
         {
+            ProcessLog.Log($"-- * Cut AnimationClip: {name} [{timeFrom} - {timeTo}]");
             var clip = new AnimationClip();
             clip.frameRate = baseClip.frameRate;
             clip.legacy = baseClip.legacy;
@@ -443,6 +444,7 @@ namespace Unity2DAdapter.Unity
             var bindings = AnimationUtility.GetCurveBindings(baseClip);
             foreach (var binding in bindings)
             {
+                // ProcessLog.Log($"-- ** {binding.path}.{binding.propertyName}");
                 var curve = AnimationUtility.GetEditorCurve(baseClip, binding);
                 var newkeys = new List<Keyframe>();
                 bool includeFromKey = false, includeToKey = timeFrom == timeTo;
@@ -517,6 +519,7 @@ namespace Unity2DAdapter.Unity
             }
             if (found)
             {
+                newkey.time = time;
                 newkey.value = value;
             }
             return newkey;
