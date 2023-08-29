@@ -379,7 +379,7 @@ namespace Unity2DAdapter.Unity
         {
             AnimatorControllerParameter useDefaultParameter = new AnimatorControllerParameter{
                 type = AnimatorControllerParameterType.Bool,
-                defaultBool = true,
+                defaultBool = false,
                 name = "UseDefault"
             };
             controller.AddParameter(useDefaultParameter);
