@@ -156,6 +156,17 @@ Import Used Png Files";
             return list.ToArray();
         }
 
+        public static string[] EnumValidInputPath(string path)
+        {
+            var list = EnumCocoStudioProjects(path);
+            var result = new string[list.Length];
+            for (int i = 0; i < list.Length; i++)
+            {
+                result[i] = list[i].FindPath;
+            }
+            return result;
+        }
+
         static void Test()
         {
         }
