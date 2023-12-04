@@ -23,7 +23,6 @@ namespace Unity2DAdapter.Runtime
     ///     3. 颜色叠加（继承叠加）
     /// </summary>
     // [RequireComponent(typeof(Graphic))]
-    [XLua.ReflectionUse]
     [RequireComponent(typeof(RectTransform))]
     public class MeshTransform : BaseMeshEffect
     {

@@ -1,0 +1,1 @@
+ams/plugin/reslink@0
